@@ -1,0 +1,19 @@
+{
+  "name": "codex-ai-actor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5714 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5814 --strictPort",
+    "test": "node --test tools/performance.test.mjs"
+  },
+  "dependencies": {
+    "pinyin-pro": "^3.29.5",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}
