@@ -19,7 +19,7 @@
           <button type="button" data-tab="script">剧本</button>
           <button type="button" data-tab="gallery">表情图谱</button>
         </nav>
-        <div class="lab-label"><span></span> 3D 表演实验室</div>
+
       </div>
     </header>
     <main class="workspace">
@@ -40,11 +40,12 @@
               <div class="monitor-state"><span id="stage-state">就绪</span><span class="monitor-divider"></span><span id="shot-label">全景</span></div>
             </div>
             <div class="viewport" id="viewport">
-              <canvas id="stage" aria-label="罗密欧与朱丽叶三维排练舞台"></canvas>
-              <div id="render-error" class="render-error" hidden>舞台需要支持 WebGL 2 的浏览器。请启用浏览器的图形加速后重新加载。</div>
-              <div class="view-fade"></div>
-              <div class="framing" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-              <div class="caption" aria-label="当前字幕">
+              <div class="stage-image">
+                <canvas id="stage" aria-label="罗密欧与朱丽叶三维排练舞台"></canvas>
+                <div id="render-error" class="render-error" hidden>舞台需要支持 WebGL 2 的浏览器。请启用浏览器的图形加速后重新加载。</div>
+                <div class="view-fade"></div>
+              </div>
+              <div class="caption" id="caption" aria-label="当前字幕">
                 <span id="caption-speaker"></span>
                 <p id="caption-text"></p>
               </div>
@@ -55,13 +56,14 @@
                 <button type="button" id="play" class="icon-button play" aria-label="播放" title="播放 / 暂停（空格）"></button>
                 <button type="button" id="next" class="icon-button" aria-label="下一句" title="下一句"></button>
                 <output id="timecode" class="timecode" aria-label="当前时间与总时长">00:00 <b>/</b> 00:00</output>
+                <button type="button" id="captions-toggle" class="icon-button" aria-label="字幕" aria-pressed="true" title="显示或隐藏字幕"></button>
                 <button type="button" id="voice" class="icon-button voice" aria-label="开启朗读" aria-pressed="false" title="开启朗读"></button>
                 <button type="button" id="fullscreen" class="icon-button" aria-label="全屏舞台" title="全屏舞台"></button>
               </div>
               <div class="track">
                 <div class="cues" id="cues"></div>
                 <input type="range" id="timeline" min="0" max="1" step="0.001" value="0" aria-label="拖动场景时间线">
-                <div class="ruler" aria-hidden="true"><span>0:00</span><span id="duration">0:00</span></div>
+                <div class="ruler" aria-hidden="true"><span>0:00</span><span class="step-hint">[ / ] 逐帧</span><span id="duration">0:00</span></div>
               </div>
             </div>
           </div>
@@ -76,7 +78,7 @@
 
         <aside class="inspector" aria-label="导演控制">
           <div id="live-panel">
-            <header class="inspector-header"><div class="panel-icon" id="direction-icon" aria-hidden="true"></div><div><h2>现场导戏</h2><p>PERFORMANCE CONTROLS</p></div></header>
+            <header class="inspector-header"><div class="panel-icon" id="direction-icon" aria-hidden="true"></div><div><h2>现场导戏</h2></div></header>
             <div class="control-content">
               <fieldset class="actor-control">
                 <legend>演员</legend>
@@ -102,7 +104,7 @@
           </div>
 
           <div id="script-panel" hidden>
-            <header class="inspector-header"><div class="panel-icon" id="script-icon" aria-hidden="true"></div><div><h2>剧本</h2><p>SCENE SCRIPT</p></div></header>
+            <header class="inspector-header"><div class="panel-icon" id="script-icon" aria-hidden="true"></div><div><h2>剧本</h2></div></header>
             <div class="control-content">
               <form id="script-form">
                 <label class="field" for="script">编辑排练指令
@@ -116,7 +118,7 @@
           </div>
 
           <div id="gallery-panel" hidden>
-            <header class="inspector-header"><div class="panel-icon" id="gallery-icon" aria-hidden="true"></div><div><h2>表情图谱</h2><p>EXPRESSION STUDIES</p></div></header>
+            <header class="inspector-header"><div class="panel-icon" id="gallery-icon" aria-hidden="true"></div><div><h2>表情图谱</h2></div></header>
             <div class="control-content">
               <fieldset><legend>演员</legend><div id="gallery-actors" class="actor-options"></div></fieldset>
               <fieldset><legend>面部表情</legend><div class="gallery-options" id="gallery-emotions"></div></fieldset>

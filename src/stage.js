@@ -7,10 +7,10 @@ import { group, lathe, mesh, oval, surface, tube, vec } from './model.js';
 export const LIGHTS = { auto: '随情绪', moon: '月光', amber: '暖金', rose: '绯红', cold: '冷蓝' };
 export const CAMERAS = { auto: '自动', wide: '全景', medium: '中景', close: '特写' };
 const looks = {
-  moon: ['#ffdec4', '#a1aace', '#a180f0', '#b1a0f1'],
-  amber: ['#ffd0a2', '#c79175', '#ff9473', '#ffbb81'],
-  rose: ['#ffd2cd', '#e998aa', '#f36d8f', '#ef88ab'],
-  cold: ['#d6e9ff', '#7faadd', '#82a1ff', '#a1bdff'],
+  moon: ['#ffe0b9', '#94b9c7', '#729bcb', '#8db4d7'],
+  amber: ['#ffd4a9', '#b1a396', '#cb9b6d', '#f6bc73'],
+  rose: ['#ffd7be', '#b2a2b3', '#ba657b', '#da7f8f'],
+  cold: ['#e8e8dd', '#719fb7', '#658ed0', '#8fbbde'],
 };
 const matte = (color, options = {}) => new T.MeshLambertMaterial({ color, ...options });
 const moods = { neutral: 'moon', tender: 'moon', joy: 'amber', sorrow: 'cold', anger: 'rose', fear: 'cold', surprise: 'moon', disgust: 'rose', contempt: 'amber' };
@@ -34,80 +34,115 @@ function drawTexture(width, height, paint) {
 }
 
 function backdrop(parent) {
-  const sky = drawTexture(1344, 896, (ctx, w, h) => {
+  const sky = drawTexture(1536, 1024, (ctx, w, h) => {
+    const next = rng(66125);
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    ['#090e28', '#141b41', '#2c2d54', '#593d62', '#a06a79'].forEach((color, i) => grad.addColorStop(i * 0.25, color));
+    const colors = ['#0a1221', '#16263c', '#243d50', '#456667', '#7b8071'];
+    colors.forEach((color, i) => grad.addColorStop(i / (colors.length - 1), color));
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
-    const halo = ctx.createRadialGradient(w * 0.53, h * 0.33, 22, w * 0.53, h * 0.33, 430);
-    halo.addColorStop(0, '#adb2fe59');
-    halo.addColorStop(1, '#6c70ee00');
+    const halo = ctx.createRadialGradient(w * 0.35, h * 0.21, 28, w * 0.35, h * 0.21, 410);
+    halo.addColorStop(0, '#aacdd073');
+    halo.addColorStop(0.43, '#7396aa3b');
+    halo.addColorStop(1, '#36587800');
     ctx.fillStyle = halo;
     ctx.fillRect(0, 0, w, h);
-    const next = rng(66125);
-    for (let i = 0; i < 440; i++) {
-      const x = next() * w, y = next() * h * 0.84, r = next() ** 4 * 1.75 + 0.35;
-      ctx.fillStyle = `rgba(211,222,249,${0.2 + 0.66 * next()})`;
+    for (let i = 0; i < 285; i++) {
+      const x = next() * w, y = next() * h * 0.69, r = 0.24 + next() ** 6 * 1.24;
+      ctx.fillStyle = `rgba(220,232,224,${0.13 + 0.61 * next()})`;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
     }
-    for (let i = 0; i < 11; i++) {
-      const x = next() * w, y = next() * h * 0.74, reach = 1.8 + next() * 2.5;
-      ctx.strokeStyle = '#d5dbff9f';
-      ctx.beginPath();
-      ctx.moveTo(x - reach, y); ctx.lineTo(x + reach, y);
-      ctx.moveTo(x, y - reach); ctx.lineTo(x, y + reach);
-      ctx.stroke();
+    for (let i = 0; i < 260; i++) {
+      const x = next() * w, y = h * (0.31 + next() * 0.57) + Math.sin(x * 0.006) * 37;
+      const rx = 65 + 360 * next(), ry = 4 + next() ** 2 * 26;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(rx, ry);
+      const cloud = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      cloud.addColorStop(0, i % 3 ? '#97a9a812' : '#12263b29');
+      cloud.addColorStop(1, '#536d7600');
+      ctx.fillStyle = cloud;
+      ctx.fillRect(-1, -1, 2, 2);
+      ctx.restore();
     }
-    for (let layer = 0; layer < 5; layer++) {
-      const horizon = h * (0.76 + layer * 0.057);
-      ctx.fillStyle = ['#514368', '#433b61', '#353656', '#24273d', '#1d2237'][layer];
+    for (let layer = 0; layer < 4; layer++) {
+      const horizon = h * (0.66 + layer * 0.066);
+      ctx.fillStyle = ['#466068', '#354e57', '#263e47', '#1b333c'][layer];
       ctx.beginPath();
       ctx.moveTo(0, h);
-      ctx.lineTo(0, horizon);
-      for (let x = 0; x <= w + 13; x += 13) {
-        const hill = Math.sin(x * (0.005 + layer * 0.0006) + layer * 2.24) * 39 + Math.sin(x * 0.012 + layer) * 20;
-        ctx.lineTo(x, horizon - hill - next() * 9);
+      for (let x = 0; x <= w + 4; x += 4) {
+        const hill = Math.sin(x * (0.0036 + layer * 0.0006) + layer * 2.24) * 49 + Math.sin(x * 0.011 + layer) * 21;
+        const trees = (Math.sin(x * 0.14 + layer) + Math.cos(x * 0.29)) * (2 + layer);
+        ctx.lineTo(x, horizon - hill - trees - next() * 5);
       }
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
     }
+    const town = ctx.createLinearGradient(0, h * 0.63, 0, h * 0.88);
+    town.addColorStop(0, '#233f48');
+    town.addColorStop(1, '#243d48');
+    for (let i = 0; i < 86; i++) {
+      const x = w * 0.20 + next() * w * 0.57;
+      const y = h * (0.775 + next() * 0.061) - Math.sin(x * 0.005) * 18;
+      const bw = 3 + next() * 12;
+      const bh = 3 + next() ** 2 * 26;
+      ctx.fillStyle = town;
+      ctx.fillRect(x, y - bh, bw, bh);
+      ctx.beginPath();
+      ctx.moveTo(x - 1, y - bh);
+      ctx.lineTo(x + bw * 0.5, y - bh - bw * 0.63);
+      ctx.lineTo(x + bw + 1, y - bh);
+      ctx.fill();
+      if (i % 3 === 0) {
+        ctx.fillStyle = '#c6a16f95';
+        ctx.fillRect(x + bw * 0.36, y - bh * 0.53, 1.8, 2.5);
+      }
+    }
+    const mist = ctx.createLinearGradient(0, h * 0.74, 0, h);
+    mist.addColorStop(0, '#a1b4ad00');
+    mist.addColorStop(0.27, '#8dabab2f');
+    mist.addColorStop(0.70, '#111f2e20');
+    mist.addColorStop(1, '#08132195');
+    ctx.fillStyle = mist;
+    ctx.fillRect(0, 0, w, h);
   });
-  mesh(parent, new T.PlaneGeometry(20, 10.55), new T.MeshBasicMaterial({ map: sky, toneMapped: false }), 0, 4.98, -8.2);
+  mesh(parent, new T.PlaneGeometry(25, 14.1), new T.MeshBasicMaterial({ map: sky, toneMapped: false }), 0, 5.10, -10.5);
   const moon = drawTexture(384, 384, (ctx, w) => {
     const c = w / 2;
-    const halo = ctx.createRadialGradient(c, c, 8, c, c, c);
-    halo.addColorStop(0, '#fef5daaa');
-    halo.addColorStop(0.42, '#d0caff3c');
-    halo.addColorStop(0.60, '#9ea9ef22');
+    const halo = ctx.createRadialGradient(c, c, 20, c, c, c);
+    halo.addColorStop(0, '#e2efdb8c');
+    halo.addColorStop(0.41, '#c8e6de36');
+    halo.addColorStop(0.68, '#8db9cb13');
     halo.addColorStop(1, '#8d9be900');
     ctx.fillStyle = halo;
     ctx.fillRect(0, 0, w, w);
-    const r = 78;
+    const r = 69;
     ctx.save();
     ctx.beginPath();
     ctx.arc(c, c, r, 0, Math.PI * 2);
     ctx.clip();
-    const disc = ctx.createRadialGradient(c - 24, c - 27, 10, c, c, r * 1.25);
-    disc.addColorStop(0, '#fffae7');
-    disc.addColorStop(0.74, '#f3dab1');
-    disc.addColorStop(1, '#bea6b8');
+    const disc = ctx.createRadialGradient(c - 23, c - 32, 5, c, c, r * 1.20);
+    disc.addColorStop(0, '#f8f2d4');
+    disc.addColorStop(0.72, '#d7decb');
+    disc.addColorStop(1, '#99acae');
     ctx.fillStyle = disc;
     ctx.fillRect(c - r, c - r, r * 2, r * 2);
     const next = rng(335);
-    for (let i = 0; i < 420; i++) {
-      const x = c + (next() - 0.5) * 162, y = c + (next() - 0.5) * 162, radius = 0.7 + next() ** 4 * 17;
+    for (let i = 0; i < 620; i++) {
+      const x = c + (next() - 0.5) * 144, y = c + (next() - 0.5) * 144;
+      const radius = 1.3 + next() ** 3 * 18;
       const crater = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      crater.addColorStop(0, next() > 0.5 ? '#907c8f36' : '#fff9e883');
-      crater.addColorStop(1, '#9a809500');
+      crater.addColorStop(0, i % 3 ? '#6b88864b' : '#fff9e84f');
+      crater.addColorStop(1, '#74929a00');
       ctx.fillStyle = crater;
       ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
     ctx.restore();
   });
-  mesh(parent, new T.PlaneGeometry(3.92, 3.92), new T.MeshBasicMaterial({ map: moon, transparent: true, depthWrite: false, toneMapped: false }), 0.07, 4.46, -7.82);
+  mesh(parent, new T.PlaneGeometry(3.1, 3.1), new T.MeshBasicMaterial({ map: moon, transparent: true, depthWrite: false, toneMapped: false }), -1.32, 4.90, -10.18);
 }
 
 function makeArch(parent, center, span, height, z, mats, small = false) {
@@ -159,15 +194,72 @@ function radialPool(parent, radius, x, y, z, color, opacity, aspect = 0.67) {
   return pool;
 }
 
+function stageHaze(parent) {
+  const texture = drawTexture(256, 512, (ctx, w, h) => {
+    const pixels = ctx.createImageData(w, h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const v = y / h;
+        const u = (x / w - 0.5) / (0.19 + v * 0.33);
+        const index = (x + y * w) * 4;
+        pixels.data[index] = 159;
+        pixels.data[index + 1] = 205;
+        pixels.data[index + 2] = 227;
+        pixels.data[index + 3] = Math.exp(-u * u * 3) * Math.sin(v * Math.PI) ** 0.9 * 42;
+      }
+    }
+    ctx.putImageData(pixels, 0, 0);
+  });
+  const mat = new T.MeshBasicMaterial({
+    map: texture, transparent: true, depthWrite: false, toneMapped: false,
+    blending: T.AdditiveBlending, opacity: 0.60,
+  });
+  const beam = mesh(parent, new T.PlaneGeometry(2.86, 6.50), mat, -0.05, 3.30, -2.96);
+  beam.rotation.z = -0.40;
+  const echo = mesh(parent, new T.PlaneGeometry(2.14, 5.60), mat, 0.24, 3.29, -3.08);
+  echo.rotation.z = -0.39;
+}
+
+function lanterns(parent, metal, stone) {
+  const warm = new T.MeshBasicMaterial({ color: '#ecb36f' });
+  const glowMap = drawTexture(128, 128, (ctx, w) => {
+    const c = w / 2;
+    const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+    gradient.addColorStop(0, '#ffd39cac');
+    gradient.addColorStop(0.23, '#ffc28576');
+    gradient.addColorStop(1, '#fa9c5b00');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, w);
+  });
+  const glow = new T.SpriteMaterial({ map: glowMap, depthWrite: false, opacity: 0.57, toneMapped: false });
+  for (const [x, y, z] of [[-3.76, 0.42, -0.33], [3.71, 0.39, -0.48], [2.64, 0.33, -2.13]]) {
+    lathe(parent, [[0, 0.24], [0.06, 0.24], [0.10, 0.19], [0.37, 0.14], [0.39, 0.21], [0.43, 0.21]], stone, x, -0.047, z, 1, 1, 10);
+    lathe(parent, [[0, 0.14], [0.034, 0.14], [0.052, 0.113], [0.267, 0.084], [0.286, 0.109],
+      [0.318, 0.09], [0.359, 0.028], [0.382, 0.008]], metal, x, y, z, 1, 1, 8);
+    oval(parent, warm, x, y + 0.148, z, 0.111, 0.104, 0.111);
+    for (let i = 0; i < 8; i++) {
+      const angle = i * Math.PI / 4;
+      const dx = Math.cos(angle), dz = Math.sin(angle);
+      tube(parent, [vec(x + dx * 0.12, y + 0.038, z + dz * 0.12),
+        vec(x + dx * 0.106, y + 0.163, z + dz * 0.106),
+        vec(x + dx * 0.090, y + 0.277, z + dz * 0.09)], 0.009, metal, 4, 6);
+    }
+    const aura = new T.Sprite(glow);
+    aura.position.set(x, y + 0.15, z + 0.05);
+    aura.scale.set(0.74, 0.82, 1);
+    parent.add(aura);
+  }
+}
+
 function curtains(parent) {
-  const fabric = matte('#b08fa6', { side: T.DoubleSide, vertexColors: true });
-  const gold = matte('#a07b61');
-  const colors = [new T.Color('#2e1c33'), new T.Color('#714056')];
+  const fabric = matte('#8c6054', { side: T.DoubleSide, vertexColors: true });
+  const gold = matte('#9d7960');
+  const colors = [new T.Color('#30232f'), new T.Color('#713740')];
   function fold(side, u, v) {
     const gather = Math.sin(v * Math.PI) ** 2;
-    const width = 1.15 - 0.53 * gather;
+    const width = 1.26 - 0.48 * gather;
     const ripple = Math.sin(u * Math.PI * 12 + v * 1.75);
-    return [side * (4.84 - u * width + 0.13 * gather), -0.16 + v * 5.82, -2.20 + ripple * (0.116 - gather * 0.049) + u * 0.15];
+    return [side * (5.38 - u * width + 0.13 * gather), -0.16 + v * 5.82, -2.20 + ripple * (0.116 - gather * 0.049) + u * 0.15];
   }
   for (const side of [-1, 1]) {
     const geo = surface(48, 17, (u, v) => fold(side, u, v));
@@ -195,7 +287,7 @@ function curtains(parent) {
 
 function makeVines(parent, mat, stem, center, seed) {
   const next = rng(seed);
-  const petals = new T.InstancedMesh(new T.SphereGeometry(1, 6, 4), mat, 190);
+  const petals = new T.InstancedMesh(new T.SphereGeometry(1, 5, 3), mat, 190);
   const sample = new T.Object3D();
   const color = new T.Color();
   let count = 0;
@@ -209,11 +301,11 @@ function makeVines(parent, mat, stem, center, seed) {
       const t = 0.18 + i * 0.043;
       sample.position.copy(curve.getPoint(t)).add(vec((next() - 0.5) * 0.26, (next() - 0.5) * 0.18, (next() - 0.5) * 0.29));
       sample.rotation.set(next() * 5, next() * 5, next() * 5);
-      const s = 0.039 + next() * 0.096;
+      const s = 0.033 + next() * 0.084;
       sample.scale.set(s, s * 0.49, s * 0.70);
       sample.updateMatrix();
-      const rose = next() > 0.21;
-      color.setHSL(rose ? 0.92 + next() * 0.053 : 0.51 + next() * 0.065, 0.25 + next() * 0.23, 0.23 + next() * 0.25);
+      const rose = next() > 0.79;
+      color.setHSL(rose ? 0.98 - next() * 0.092 : 0.38 + next() * 0.12, 0.13 + next() * 0.24, 0.080 + next() * (rose ? 0.24 : 0.072));
       petals.setMatrixAt(count, sample.matrix);
       petals.setColorAt(count++, color);
     }
@@ -256,25 +348,26 @@ function batchStatic(parent, excluded = () => false) {
 function buildSet(scene) {
   const set = group(scene);
   backdrop(set);
-  const stone = matte('#5f5574');
-  const recess = matte('#272a48');
-  const trim = matte('#a18478');
-  makeArch(set, 0, 4.95, 4.98, -3.67, [stone, recess, trim]);
-  makeArch(set, -3.57, 2.11, 4.03, -3.76, [stone, recess, trim], true);
-  makeArch(set, 3.57, 2.11, 4.03, -3.76, [stone, recess, trim], true);
+  stageHaze(set);
+  const stone = matte('#4b595f');
+  const recess = matte('#273643');
+  const trim = matte('#85735e');
+  makeArch(set, 0, 5.72, 5.31, -3.67, [stone, recess, trim]);
+  makeArch(set, -3.87, 2.03, 4.08, -3.78, [stone, recess, trim], true);
+  makeArch(set, 3.87, 2.03, 4.08, -3.78, [stone, recess, trim], true);
   curtains(set);
 
-  const wood = matte('#493447');
+  const wood = matte('#3f3435');
   const base = mesh(set, geometryCylinder(5.17, 5.19, 0.24, 84), wood, 0, -0.18, -0.26);
   base.scale.z = 0.69;
   const deckPattern = drawTexture(1024, 1024, (ctx, w, h) => {
     const next = rng(72);
-    ctx.fillStyle = '#3b2d3d';
+    ctx.fillStyle = '#2f2728';
     ctx.fillRect(0, 0, w, h);
     for (let row = 0; row < 44; row++) {
       const y = row * h / 44;
       const light = Math.round(24 + next() * 21);
-      ctx.fillStyle = `rgb(${light + 28},${light + 14},${light + 23})`;
+      ctx.fillStyle = `rgb(${light + 17},${light + 6},${light + 3})`;
       ctx.fillRect(0, y, w, h / 44 - 1.25);
       ctx.fillStyle = '#bd8f8823';
       ctx.fillRect(0, y + 1, w, 1);
@@ -311,10 +404,9 @@ function buildSet(scene) {
     return vec(5.159 * Math.cos(a), -0.13, -0.26 + 3.561 * Math.sin(a));
   });
   tube(set, deckRim, 0.017, trim, 5, 78);
-  mesh(set, new T.PlaneGeometry(120, 120), matte('#201b30'), 0, -0.31, 0).rotation.x = -Math.PI / 2;
 
   const balcony = group(set, 1.66, -0.03, -0.76);
-  const baseTop = mesh(balcony, geometryCylinder(1.43, 1.45, 0.31, 48), matte('#514052'), 0, 0.188, 0);
+  const baseTop = mesh(balcony, geometryCylinder(1.43, 1.45, 0.31, 48), matte('#3b4548'), 0, 0.188, 0);
   baseTop.scale.z = 0.81;
   const band = mesh(balcony, geometryCylinder(1.44, 1.449, 0.056, 48), trim, 0, 0.237, 0);
   band.scale.z = 0.81;
@@ -338,11 +430,12 @@ function buildSet(scene) {
   tube(balcony, rail.map(p => p.clone().add(vec(0, 0.028, 0))), 0.035, trim, 8, 38);
 
   const plant = matte('#ffffff');
-  const stem = matte('#393345');
+  const stem = matte('#333730');
   makeVines(set, plant, stem, vec(-3.32, -0.03, -1.75), 551);
   makeVines(set, plant, stem, vec(3.46, -0.03, -1.64), 992);
   makeVines(set, plant, stem, vec(2.83, 0.44, -1.49), 763);
   makeVines(set, plant, stem, vec(-2.60, -0.04, -2.42), 731);
+  lanterns(set, trim, recess);
 
   const dustGeo = new T.BufferGeometry();
   const next = rng(84);
@@ -353,34 +446,57 @@ function buildSet(scene) {
     positions[i * 3 + 2] = -2.5 + next() * 4.6;
   }
   dustGeo.setAttribute('position', new T.BufferAttribute(positions, 3));
-  const dust = new T.Points(dustGeo, new T.PointsMaterial({ color: '#edcca2', size: 0.025, transparent: true, opacity: 0.61, depthWrite: false }));
+  const dust = new T.Points(dustGeo, new T.PointsMaterial({ color: '#d5c9a4', size: 0.019, transparent: true, opacity: 0.43, depthWrite: false }));
   scene.add(dust);
   batchStatic(set);
   const pools = [
-    radialPool(scene, 2.85, -1.32, -0.048, 0.21, '#c0a1ec', 0.33),
-    radialPool(scene, 2.37, 1.47, 0.349, -0.51, '#d19ede', 0.30, 0.57),
+    radialPool(scene, 2.85, -1.32, -0.048, 0.21, '#b8a88d', 0.24),
+    radialPool(scene, 2.37, 1.47, 0.349, -0.51, '#93b8c6', 0.24, 0.57),
   ];
   const shadows = [
     radialPool(scene, 0.79, -1.37, -0.045, 0.28, '#100c17', 0.74, 0.65),
     radialPool(scene, 0.76, 1.31, 0.350, -0.28, '#160e1f', 0.77, 0.66),
   ];
-  return { dust, pools, shadows };
+  return { set, dust, pools, shadows };
+}
+
+function portraitBackdrop(scene) {
+  const texture = drawTexture(1024, 640, (ctx, w, h) => {
+    const next = rng(149);
+    ctx.fillStyle = '#101926';
+    ctx.fillRect(0, 0, w, h);
+    for (const [x, y, r, tint] of [
+      [0.23, 0.34, 0.46, '#364b59'], [0.63, 0.45, 0.43, '#3d4f58'], [0.96, 0.13, 0.32, '#616459'],
+    ]) {
+      const glow = ctx.createRadialGradient(x * w, y * h, 1, x * w, y * h, r * w);
+      glow.addColorStop(0, tint);
+      glow.addColorStop(1, tint + '00');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, w, h);
+    }
+    for (let i = 0; i < 20; i++) {
+      const x = next() * w, y = next() * h, r = 3 + next() * 9;
+      const mote = ctx.createRadialGradient(x, y, 0, x, y, r);
+      mote.addColorStop(0, i % 3 ? '#c8aa7659' : '#b3cbd04d');
+      mote.addColorStop(1, '#c8aa7600');
+      ctx.fillStyle = mote;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+  });
+  return mesh(scene, new T.PlaneGeometry(15, 9.375), new T.MeshBasicMaterial({ map: texture, toneMapped: false }), 0, 2.85, -4.0);
 }
 
 function addLights(scene) {
-  scene.add(new T.HemisphereLight('#dad0df', '#91777e', 1.53));
-  const key = new T.DirectionalLight('#ffdec4', 1.92);
-  key.position.set(-3.7, 4.9, 5.8);
-  scene.add(key);
-  const fill = new T.DirectionalLight('#a1aace', 1.36);
-  fill.position.set(4.1, 3.0, 4.5);
-  scene.add(fill);
-  const rim = new T.DirectionalLight('#a180f0', 2.16);
-  rim.position.set(0.2, 4.5, -4.5);
-  scene.add(rim);
-  const spot = new T.SpotLight('#b1a0f1', 43, 15, 0.49, 0.69, 1.55);
+  const sky = new T.HemisphereLight('#bdcbd5', '#887782', 1.06);
+  const key = new T.DirectionalLight('#ffe0b9', 2.25);
+  key.position.set(-3.4, 3.1, 6.1);
+  const fill = new T.DirectionalLight('#94b9c7', 1.13);
+  fill.position.set(4.2, 1.9, 6.1);
+  const rim = new T.DirectionalLight('#729bcb', 2.7);
+  rim.position.set(2.0, 2.8, -4.9);
+  const spot = new T.SpotLight('#8db4d7', 47, 15, 0.44, 0.76, 1.55);
   spot.position.set(0.8, 6.4, 2.0);
-  scene.add(spot, spot.target);
+  scene.add(sky, key, fill, rim, spot, spot.target);
   return [key, fill, rim, spot];
 }
 
@@ -411,10 +527,11 @@ export class Stage {
     renderer.toneMappingExposure = 1.02;
     this.renderer = renderer;
     this.scene = new T.Scene();
-    this.scene.background = new T.Color('#101327');
+    this.scene.background = new T.Color('#101926');
     this.camera = new T.PerspectiveCamera(32, 1, 0.06, 60);
     this.lightRig = addLights(this.scene);
     this.set = buildSet(this.scene);
+    this.portraitBackdrop = portraitBackdrop(this.scene);
     this.actors = [new Actor(this.scene, 0), new Actor(this.scene, 1)];
     for (const actor of this.actors) {
       batchStatic(actor.head);
@@ -449,27 +566,40 @@ export class Stage {
     const { beat, speech, progress, local } = sampleScene(scene, time);
     const active = scene.slots.indexOf(beat.speaker);
     const solo = scene.cast.length === 1;
+    const studioPortrait = Boolean(portrait) && cameraMode === 'close';
+    this.portraitBackdrop.visible = studioPortrait;
+    this.set.set.visible = !studioPortrait;
+    this.set.dust.visible = !studioPortrait;
+    for (const pool of this.set.pools) pool.visible = !studioPortrait;
     const previous = scene.beats[beat.index - 1];
-    const bodyBlend = ease(local / 0.53);
+    const bodyBlend = ease(local / 0.52);
     const intensity = Math.max(...beat.emotions.map(e => e.intensity));
+    const listenerCatch = ease((local - 0.36) / 0.67) * (1 - ease((progress - 0.74) / 0.26));
+    const phraseTurn = ease((progress - 0.24) / 0.18) * (1 - ease((progress - 0.63) / 0.30));
+    const reception = listenerCatch * (0.37 + 0.59 * phraseTurn);
+    const delivery = speech.talking ? (Math.sin(progress * 14.3 - 0.6) * 0.35 + phraseTurn * 0.36) * (0.48 + intensity * 0.52) : 0;
     for (const actor of this.actors) {
       const speaking = actor.index === active;
-      const listening = !speaking && !solo && local > 0.12;
-      const listenerIntensity = 0.20 + 0.23 * intensity * Math.sin(progress * Math.PI);
+      const listening = !speaking && !solo;
+      const listenerIntensity = 0.10 + (0.19 + 0.37 * intensity) * reception;
       const newFace = speaking ? (beat.expression ??= blendedExpression(beat.emotions)) :
         listenerFace(beat.emotion, listenerIntensity);
       const wasSpeaking = previous?.speaker === scene.slots[actor.index];
       const oldFace = wasSpeaking ? (previous.expression ??= blendedExpression(previous.emotions)) :
-        previous && !solo ? listenerFace(previous.emotion, 0.20) : neutralFace;
-      const expression = local >= 0.53 || portrait ? newFace : Object.fromEntries(
+        previous && !solo ? listenerFace(previous.emotion, 0.10) : neutralFace;
+      const expression = local >= 0.52 || portrait ? newFace : Object.fromEntries(
         Object.keys(newFace).map(key => [key, mix(oldFace[key], newFace[key], bodyBlend)]),
       );
+      const actorReaches = beat.actions.includes('reach') || beat.actions.includes('point');
+      const focus = solo ? 0 : listening ? 0.41 + reception * 0.51 :
+        mix(0.39 + (previous && !wasSpeaking ? 0.28 : 0), (actorReaches ? 0.64 : 0.43) + phraseTurn * 0.19, bodyBlend);
       actor.root.visible = !solo || speaking;
-      this.set.shadows[actor.index].visible = actor.root.visible;
+      this.set.shadows[actor.index].visible = actor.root.visible && !studioPortrait;
       if (!actor.root.visible) continue;
       actor.pose({
         time: actor.index * 0.29 + time, expression, speaking: speaking && speech.talking && !portrait,
-        listening, actions: speaking ? beat.actions : [],
+        listening, actions: speaking ? beat.actions : [], focus,
+        delivery: speaking && !portrait ? delivery : 0, reaction: reception,
         progress, mouth: speaking && !portrait ? speech.mouth : MOUTH.rest, portrait: speaking && Boolean(portrait),
       });
       const shadow = this.set.shadows[actor.index];
@@ -484,19 +614,20 @@ export class Stage {
       colorWork.set(looks[lightingKey][i]);
       previousColor.set(looks[previousKey][i]);
       light.color.copy(previousColor.lerp(colorWork, ease(local / 0.86)));
+      if (studioPortrait && lighting === 'auto' && i < 2) light.color.lerp(colorWork.set(looks.moon[i]), 0.68);
     }
     const actor = this.actors[active];
     const spot = this.lightRig[3];
     spot.target.position.set(mix(0, actor.base.x, ease(local / 1.4)), 1.3, actor.base.z);
     spot.target.updateMatrixWorld();
-    this.set.pools[0].material.color.copy(this.lightRig[2].color);
+    this.set.pools[0].material.color.set('#baa491').lerp(this.lightRig[0].color, 0.3);
     this.set.pools[1].material.color.copy(this.lightRig[2].color);
-    const camera = this.frame(cameraMode, actor, beat, time, local, progress, intensity);
+    const camera = this.frame(cameraMode, actor, beat, time, local, progress, intensity, portrait, solo);
     this.renderer.render(this.scene, this.camera);
     return { beat, speech, local, progress, camera };
   }
 
-  frame(mode, actor, beat, time, local, progress, intensity) {
+  frame(mode, actor, beat, time, local, progress, intensity, portrait, solo) {
     const aspect = this.camera.aspect;
     const narrow = aspect < 1.38;
     let shot = mode;
@@ -515,16 +646,19 @@ export class Stage {
     const dir = actor.orbitDirection;
     const aim = vec(0, 1.73, -0.39);
     if (shot === 'wide') {
-      const wideZ = narrow ? 10.6 + (1.35 - aspect) * 4.5 : 8.58 + Math.max(0, 1.85 - aspect) * 1.45;
-      this.camera.position.set(0.17 + drift, 3.45, wideZ - push * 0.21);
-      aim.y = 2.13;
+      const wideZ = narrow ? 10.55 + (1.35 - aspect) * 5.6 : 9.90 + Math.max(0, 1.85 - aspect) * 1.16;
+      this.camera.position.set(0.03 + drift, 3.40, wideZ - push * 0.23);
+      aim.y = 2.20;
     } else if (shot === 'medium') {
-      const center = mix(actor.base.x, headWorld.x, 0.60);
-      this.camera.position.set(center + dir * 0.40 + drift, 2.65 + actor.base.y, 5.98 + (narrow ? 0.72 : 0) - push * 0.43);
-      aim.set(center + dir * 0.34, headWorld.y - 0.63, headWorld.z);
+      const center = mix(actor.base.x, headWorld.x, 0.62);
+      const twoShot = !solo && aspect >= 1.62;
+      this.camera.position.set(center + dir * (twoShot ? 1.02 : 0.34) + drift, 2.53 + actor.base.y,
+        headWorld.z + 4.79 + (narrow ? 0.52 : 0) - push * 0.39);
+      aim.set(center + dir * (twoShot ? 0.75 : 0.14), headWorld.y - 0.43, headWorld.z);
     } else {
-      this.camera.position.set(headWorld.x + dir * 0.17 + drift, headWorld.y + 0.16, headWorld.z + 2.76 - push * 0.25);
-      aim.set(headWorld.x + dir * 0.065, headWorld.y + 0.015, headWorld.z + 0.13);
+      const distance = (narrow ? 2.87 : 2.67) - push * 0.16;
+      this.camera.position.set(headWorld.x + dir * (portrait ? -0.36 : 1.03) + drift, headWorld.y + 0.085, headWorld.z + distance);
+      aim.set(headWorld.x + dir * (narrow ? 0.010 : portrait ? 0.15 : 0.26), headWorld.y - 0.005, headWorld.z + 0.14);
     }
     this.camera.lookAt(aim);
     return shot;

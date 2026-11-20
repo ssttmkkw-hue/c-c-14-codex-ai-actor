@@ -9,12 +9,14 @@ const playwrightRoot = process.env.PLAYWRIGHT_ROOT ?? '/workspace/pwtool/node_mo
 const { chromium } = require(playwrightRoot);
 const url = process.env.ACTOR_URL ?? 'http://127.0.0.1:5714/';
 const out = resolve(process.argv[2] ?? '/workspace/codex-actor-shots');
-const prefix = process.env.ACTOR_SHOT_PREFIX ?? 'r1-';
+const prefix = process.env.ACTOR_SHOT_PREFIX ?? 'r2-';
 const viewport = { width: 1440, height: 1040 };
 const args = ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 const emotions = ['neutral', 'joy', 'sorrow', 'anger', 'fear', 'surprise', 'disgust', 'tender', 'contempt'];
 const sequence = [0.11, 0.39, 1.13, 1.22, 2.61, 3.02, 4.42, 5.98];
+const demo = compileScene(DEMO);
 const errors = [];
+let screenshots = 0;
 
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ args });
@@ -33,6 +35,19 @@ try {
   await shot(page, 'controls');
   await page.evaluate(() => { window.actorStudio.setCamera('wide'); window.actorStudio.seek(1.25); });
   await shot(stage, 'stage-wide');
+  const captions = page.getByRole('button', { name: '字幕', exact: true });
+  const canvasBounds = await page.locator('#stage').boundingBox();
+  await captions.click();
+  assert.equal(await page.locator('#caption').isVisible(), false);
+  assert.deepEqual(await page.locator('#stage').boundingBox(), canvasBounds);
+  await captions.click();
+  assert.equal(await page.locator('#caption').isVisible(), true);
+  await captions.evaluate(button => button.blur());
+  await page.keyboard.press('BracketRight');
+  await page.waitForFunction(() => window.actorStudio.getState().time > 1.25);
+  assert.ok(Math.abs((await read()).time - 1.25 - 1 / 24) < 0.001);
+  await page.keyboard.press('BracketLeft');
+  await page.waitForFunction(() => window.actorStudio.getState().time <= 1.25);
 
   await page.getByRole('button', { name: '播放', exact: true }).click();
   await page.waitForFunction(() => window.actorStudio.getState().time > 1.47);
@@ -67,10 +82,17 @@ try {
     assert.equal((await read()).camera, expected);
   }
 
-  const kneel = compileScene(DEMO).beats.find(beat => beat.actions.includes('kneel'));
+  const kneel = demo.beats.find(beat => beat.actions.includes('kneel'));
   await page.evaluate(time => window.actorStudio.seek(time), kneel.start + kneel.duration * 0.55);
   assert.equal((await read()).camera, 'wide');
-  await page.evaluate(() => window.actorStudio.seek(4));
+  await shot(stage, 'gesture-kneel');
+  const cover = demo.beats.find(beat => beat.actions.includes('hands_on_head'));
+  await page.evaluate(time => {
+    window.actorStudio.setCamera('medium');
+    window.actorStudio.seek(time);
+  }, cover.start + cover.duration * 0.46);
+  await shot(stage, 'gesture-hands');
+  await page.evaluate(() => { window.actorStudio.setCamera('auto'); window.actorStudio.seek(4); });
 
   await page.getByRole('button', { name: '表情图谱', exact: true }).click();
   assert.equal((await read()).source, 'portrait');
@@ -93,10 +115,24 @@ try {
     assert.equal(frame.beatIndex, 0);
     assert.equal(frame.camera, 'medium');
     visemes.add(frame.viseme);
+    const unit = demo.beats[0].units[frame.subtitleIndex];
+    assert.equal(await page.locator('#caption-text mark').textContent(), unit && !unit.punctuation ? unit.char : '');
     frames.push({ t: time, viseme: frame.viseme, subtitleIndex: frame.subtitleIndex });
     await shot(stage, `line-${String(index + 1).padStart(2, '0')}`);
   }
   assert.ok(visemes.size >= 5, 'sequence should show at least five distinct viseme states');
+  const study = '你看见那边的光了吗？';
+  for (const [label, emotion] of [['hope', 'tender 0.66 + joy 0.29'], ['dread', 'fear 0.68 + sorrow 0.26']]) {
+    await page.evaluate(script => {
+      const director = window.actorStudio;
+      director.loadScene(script);
+      director.setCamera('close');
+      director.setLighting('moon');
+      director.seek(1.46);
+    }, `罗密欧 [${emotion} | reach]: ${study}`);
+    await shot(stage, `blend-${label}`);
+  }
+  await page.locator('#camera').selectOption('medium');
 
   await page.locator('#actor-options [data-value="朱丽叶"]').click();
   await page.locator('#emotions [data-value="surprise"]').click();
@@ -158,7 +194,7 @@ try {
   await shot(mobile, 'mobile', { fullPage: true });
 
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ url, viewport, fps, frames, screenshots: 21 }, null, 2));
+  console.log(JSON.stringify({ url, viewport, fps, frames, screenshots }, null, 2));
 } finally {
   await browser.close();
 }
@@ -182,4 +218,5 @@ async function open(page) {
 
 async function shot(target, name, options = {}) {
   await target.screenshot({ path: join(out, prefix + name + '.png'), animations: 'disabled', ...options });
+  screenshots++;
 }

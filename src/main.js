@@ -4,6 +4,10 @@ import { CAMERAS, LIGHTS, Stage } from './stage.js';
 import { MandarinVoice } from './voice.js';
 
 const $ = id => document.getElementById(id);
+const narrowView = matchMedia('(max-width: 760px)');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const captionRanges = new WeakMap();
+const FRAME_STEP = 1 / 24;
 const icons = {
   play: '<path d="M8 4.9v14.2L19 12 8 4.9Z" fill="currentColor" stroke-width="1.4"/>',
   pause: '<path d="M8 5v14m8-14v14" stroke-width="3"/>',
@@ -11,6 +15,7 @@ const icons = {
   next: '<path d="M19 5v14M6 6l9 6-9 6z"/>',
   sound: '<path d="M3 9v6h4l5 4V5L7 9H3Zm13-1a5.6 5.6 0 0 1 0 8m2-10a8.5 8.5 0 0 1 0 12"/>',
   mute: '<path d="M3 9v6h4l5 4V5L7 9H3Zm13 1 5 5m0-5-5 5"/>',
+  captions: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M11 10a2.4 2.4 0 1 0 0 4m6-4a2.4 2.4 0 1 0 0 4"/>',
   expand: '<path d="M8 4H4v4m12-4h4v4M4 16v4h4m8 0h4v-4"/>',
   reset: '<path d="M4 10a8 8 0 1 1 .8 6M4 10V4m0 6h6"/>',
   sliders: '<path d="M5 3v6m0 4v8m7-18v11m0 4v3m7-18v3m0 4v11M2 10h6m1 5h6m1-8h6"/>',
@@ -25,6 +30,7 @@ function icon(name) {
 $('previous').innerHTML = icon('previous');
 $('next').innerHTML = icon('next');
 $('fullscreen').innerHTML = icon('expand');
+$('captions-toggle').innerHTML = icon('captions');
 $('direction-icon').innerHTML = icon('sliders');
 $('script-icon').innerHTML = icon('script');
 $('gallery-icon').innerHTML = icon('face');
@@ -41,13 +47,12 @@ try {
 }
 const state = {
   scene: compileScene(DEMO), source: 'demo', time: 0, playing: false, camera: 'auto', lighting: 'auto', tab: 'live',
-  liveActor: CAST[0], liveEmotion: 'tender', portrait: null, portraitActor: CAST[0], portraitEmotion: 'neutral',
+  captions: true, liveActor: CAST[0], liveEmotion: 'tender', portrait: null, portraitActor: CAST[0], portraitEmotion: 'neutral',
 };
 let dirty = true;
 let lastFrame = 0;
 let lastCue;
 let lastShot = 'wide';
-let activeChar = -2;
 let lastSubtitle = -2;
 let correction = 0;
 let lastBeatNode;
@@ -155,6 +160,8 @@ function updateTransport() {
   $('stage-state').textContent = state.portrait ? '表情预览' : state.playing ? '表演中' : state.time === 0 ? '就绪' :
     state.time >= state.scene.duration ? '结束' : '已暂停';
   for (const id of ['play', 'previous', 'next', 'timeline', 'voice']) $(id).disabled = Boolean(state.portrait);
+  $('caption').hidden = !state.captions && !state.portrait;
+  $('captions-toggle').disabled = Boolean(state.portrait);
 }
 
 function rebuildTimeline() {
@@ -191,6 +198,26 @@ function rebuildTimeline() {
   }
 }
 
+function captionRange(beat, index) {
+  if (!captionRanges.has(beat)) {
+    const ends = [];
+    let start = 0;
+    for (const [i, unit] of beat.units.entries()) {
+      const count = i - start + 1;
+      if ((count >= 5 && /[。！？!?…]/u.test(unit.char)) || (count >= 12 && /[，；：、,]/u.test(unit.char)) || count >= 24) {
+        ends.push(i + 1);
+        start = i + 1;
+      }
+    }
+    if (start < beat.units.length) ends.push(beat.units.length);
+    captionRanges.set(beat, ends);
+  }
+  const ends = captionRanges.get(beat);
+  const rangeIndex = ends.findIndex(end => index < end);
+  const selected = rangeIndex < 0 ? ends.length - 1 : rangeIndex;
+  return [ends[selected - 1] ?? 0, ends[selected]];
+}
+
 function updateFrame(frame) {
   const { beat, speech, camera } = frame;
   lastShot = camera;
@@ -209,26 +236,30 @@ function updateFrame(frame) {
     lastBeatNode?.setAttribute('aria-current', 'true');
     lastSegment?.classList.add('current');
     $('caption-speaker').textContent = beat.speaker;
-    $('caption-text').setAttribute('aria-label', beat.line);
-    lastCue = beat;
     lastSubtitle = -2;
+    lastCue = beat;
   }
-  activeChar = speech.index;
+  const activeChar = speech.index;
   if (lastSubtitle !== activeChar) {
-    const read = document.createElement('span');
+    const [start, end] = captionRange(beat, activeChar);
+    const spoken = document.createElement('span');
     const mark = document.createElement('mark');
-    const unread = document.createElement('span');
-    read.className = 'read';
-    unread.className = 'unread';
-    read.textContent = beat.units.slice(0, Math.max(0, activeChar)).map(unit => unit.char).join('');
-    mark.textContent = beat.units[activeChar]?.char ?? '';
-    unread.textContent = beat.units.slice(activeChar + 1).map(unit => unit.char).join('');
-    $('caption-text').replaceChildren(read, mark, unread);
+    const upcoming = document.createElement('span');
+    const text = (from, to) => beat.units.slice(from, to).map(unit => unit.char).join('');
+    spoken.className = 'read';
+    upcoming.className = 'unread';
+    spoken.textContent = text(start, Math.max(start, activeChar));
+    if (speech.talking) mark.textContent = beat.units[activeChar]?.char ?? '';
+    else if (beat.units[activeChar]) spoken.textContent += beat.units[activeChar].char;
+    upcoming.textContent = text(Math.max(start, activeChar + 1), end);
+    $('caption-text').setAttribute('aria-label', text(start, end));
+    $('caption-text').replaceChildren(spoken, mark, upcoming);
     lastSubtitle = activeChar;
   }
   $('timeline').value = state.time;
   $('timeline').setAttribute('aria-valuetext', timecode(state.time) + ' / ' + timecode(state.scene.duration));
-  $('timecode').innerHTML = `${timecode(state.time)} <b>/</b> ${timecode(state.scene.duration)}`;
+  const fraction = String(Math.floor((state.time % 1) * 100)).padStart(2, '0');
+  $('timecode').innerHTML = `${timecode(state.time)}<small>.${fraction}</small> <b>/</b> ${timecode(state.scene.duration)}`;
 }
 
 function render() {
@@ -317,6 +348,12 @@ for (const [id, values] of [['camera', CAMERAS], ['lighting', LIGHTS]]) {
   $(id).addEventListener('change', () => setOptic(id, $(id).value, values));
 }
 
+function revealStage() {
+  if (narrowView.matches) $('viewport').closest('.monitor').scrollIntoView({
+    block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth',
+  });
+}
+
 $('line-form').addEventListener('submit', event => {
   event.preventDefault();
   const action = $('gesture').value;
@@ -326,6 +363,7 @@ $('line-form').addEventListener('submit', event => {
       intensity: Number($('intensity').value) / 100, actions: action ? [action] : [],
     }], { autoplay: true, kind: 'improv' });
     notice('live-notice', '');
+    revealStage();
   } catch (error) {
     notice('live-notice', error.message);
   }
@@ -335,6 +373,7 @@ $('script-form').addEventListener('submit', event => {
   try {
     loadScene($('script').value, { autoplay: true, kind: 'script' });
     notice('script-notice', '');
+    revealStage();
   } catch (error) {
     notice('script-notice', error.message);
   }
@@ -350,6 +389,11 @@ $('load-demo').addEventListener('click', () => {
 $('play').addEventListener('click', () => play(!state.playing));
 $('timeline').addEventListener('input', () => seek(Number($('timeline').value)));
 $('voice').addEventListener('click', () => voice.toggle());
+$('captions-toggle').addEventListener('click', () => {
+  state.captions = !state.captions;
+  $('captions-toggle').setAttribute('aria-pressed', state.captions);
+  updateTransport();
+});
 $('fullscreen').addEventListener('click', async () => {
   if (document.fullscreenElement) await document.exitFullscreen();
   else await $('viewport').requestFullscreen().catch(() => {});
@@ -365,10 +409,16 @@ function adjacent(direction) {
 $('previous').addEventListener('click', () => adjacent(-1));
 $('next').addEventListener('click', () => adjacent(1));
 document.addEventListener('keydown', event => {
-  if (event.code !== 'Space' || state.portrait || event.repeat || event.altKey || event.ctrlKey || event.metaKey ||
+  if (state.portrait || event.altKey || event.ctrlKey || event.metaKey ||
       event.target.closest('textarea, input, button, select, a, [contenteditable]')) return;
-  event.preventDefault();
-  play(!state.playing);
+  if (event.code === 'Space' && !event.repeat) {
+    event.preventDefault();
+    play(!state.playing);
+  } else if (event.key === '[' || event.key === ']') {
+    event.preventDefault();
+    play(false);
+    seek(state.time + (event.key === '[' ? -FRAME_STEP : FRAME_STEP));
+  }
 });
 window.addEventListener('resize', () => { dirty = true; });
 document.addEventListener('visibilitychange', () => { lastFrame = 0; });

@@ -4,33 +4,33 @@ import { group, lathe, makeFace, material, mesh, oval, surface, tube, vec } from
 
 const PALETTES = [
   {
-    skin: '#db9e7e', lid: '#c8957e', lower: '#d3a187', nostril: '#9a6055', brow: '#55302b',
-    lip: '#a45c55', lowerLip: '#c4786a', lipShade: '#bd8270',
-    hair: '#44231d', locks: ['#563028', '#60362d', '#472521'], thread: '#60392d',
-    iris: ['#a58255', '#6f713c'], fabric: '#28465a', sleeve: '#344f60', panel: '#385765',
-    shadow: '#172b3e', gold: '#c39a64', bright: '#dfbc81', linen: '#d2c4a5', boot: '#28262c',
+    skin: '#c89172', lid: '#aa7666', lower: '#b18370', nostril: '#623d38', brow: '#3c2721',
+    lip: '#91554b', lowerLip: '#ac6958',
+    hair: '#231717', locks: ['#4c332c', '#50372c', '#3f2a25'], thread: '#624637',
+    iris: ['#947453', '#666044'], fabric: '#1b3a45', sleeve: '#23414a', panel: '#30515b',
+    shadow: '#12222c', gold: '#b18c59', bright: '#d3ab73', linen: '#cbb391', boot: '#25242a',
   },
   {
-    skin: '#e5ae92', lid: '#d1a091', lower: '#dba995', nostril: '#a76868', brow: '#513033',
-    lip: '#a94c56', lowerLip: '#c97679', lipShade: '#cb8b80',
-    hair: '#482a28', locks: ['#503031', '#633b38', '#593034'], thread: '#65413c',
-    iris: ['#a79154', '#528174'], fabric: '#7c394b', sleeve: '#793d50', panel: '#9a4f61',
-    shadow: '#4a293a', gold: '#bd9367', bright: '#e3b886', linen: '#dfbaa4', boot: '#482c3a',
+    skin: '#deb09a', lid: '#b4817d', lower: '#bd8e83', nostril: '#7f4c47', brow: '#4b2e2c',
+    lip: '#a04c52', lowerLip: '#bb6c6b',
+    hair: '#261b25', locks: ['#533644', '#603e4c', '#442d3a'], thread: '#76515b',
+    iris: ['#967c55', '#476c66'], fabric: '#662e3f', sleeve: '#6a3140', panel: '#8b4857',
+    shadow: '#382331', gold: '#b08763', bright: '#d9ad7e', linen: '#e0bca4', boot: '#402a36',
   },
 ];
 
 const keys = ['inner', 'outer', 'knit', 'eye', 'squint', 'smile', 'frown', 'open', 'stretch', 'sneer', 'asym',
-  'pitch', 'roll', 'lean', 'lift', 'guard', 'gazeY'];
+  'pitch', 'roll', 'lean', 'lift', 'guard', 'gazeY', 'round'];
 const expressions = {
   neutral:  [],
-  joy:      [0.19, 0.55, 0, 0.03, 0.64, 1, 0, 0.43, 0, 0, 0.13, -0.08, -0.09, -0.07, 0.08, -0.10, 0.14],
-  sorrow:   [1, -0.28, 0.18, -0.40, 0.20, 0, 0.98, 0.08, 0, 0, -0.10, 0.26, 0.12, 0.19, -0.10, 0.16, -0.48],
-  anger:    [-0.21, 0.38, 1, 0.08, 0.61, 0, 0.38, 0.25, 0.50, 0.37, -0.10, 0.14, 0.02, 0.23, 0.09, 0.23, 0.05],
-  fear:     [0.82, 0.57, 0.37, 1.00, 0.07, 0, 0.31, 0.64, 1, 0, 0.15, -0.18, -0.12, -0.24, -0.03, 0.35, 0.19],
-  surprise: [0.87, 0.96, 0, 1.11, 0, 0, 0, 0.95, -0.21, 0, 0.03, -0.26, 0.04, -0.19, 0.10, 0.14, 0.31],
-  disgust:  [-0.17, 0.14, 0.60, -0.20, 0.68, -0.13, 0.35, 0.18, 0, 1, 0.36, -0.18, -0.13, -0.18, 0.03, 0.14, 0.20],
-  tender:   [0.52, 0.12, 0, -0.17, 0.30, 0.50, 0, 0.04, 0, 0, 0.05, 0.07, -0.15, 0.08, -0.01, -0.07, -0.08],
-  contempt: [-0.22, 0.04, 0.07, -0.29, 0.29, 0.14, 0.20, 0, 0.06, 0.24, 1, -0.19, 0.18, -0.12, 0.04, -0.02, -0.14],
+  joy:      [0.12, 0.30, 0, -0.09, 0.72, 1, 0, 0.36, 0, 0, 0.10, -0.04, -0.11, -0.08, 0.13, -0.10, 0.11],
+  sorrow:   [1, -0.41, 0.18, -0.28, 0.15, 0, 0.79, 0.05, 0, 0, -0.11, 0.17, 0.08, 0.25, -0.11, 0.21, -0.43],
+  anger:    [-0.30, 0.31, 1, -0.13, 0.69, 0, 0.24, 0.13, 0.47, 0.23, -0.09, 0.10, 0.02, 0.26, 0.06, 0.26, 0.14],
+  fear:     [0.86, 0.30, 0.52, 0.79, 0.12, 0, 0.55, 0.48, 0.84, 0, 0.09, -0.12, -0.12, -0.29, -0.08, 0.47, 0.17],
+  surprise: [0.84, 1.00, 0, 0.93, 0, 0, 0, 0.85, -0.21, 0, 0.03, -0.15, 0.04, -0.24, 0.12, 0.17, 0.28, 0.59],
+  disgust:  [-0.18, 0.12, 0.65, -0.26, 0.63, 0, 0.44, 0.07, 0, 1, 0.39, -0.14, -0.10, -0.17, 0.03, 0.20, 0.19],
+  tender:   [0.43, 0.04, 0, -0.13, 0.23, 0.38, 0, 0.015, 0, 0, 0.08, 0.015, -0.12, 0.11, -0.02, -0.07, -0.03],
+  contempt: [-0.12, 0.03, 0.19, -0.29, 0.38, 0.09, 0.17, 0, 0.12, 0.14, 1, -0.12, 0.14, -0.14, 0.04, -0.04, -0.12],
 };
 
 export function blendedExpression(emotions) {
@@ -76,14 +76,14 @@ function wovenPattern(scale) {
 function decorate(parent, female, mats) {
   const { gold, bright, panel, dark, fabric, linen, skin } = mats;
   if (female) {
-    lathe(parent, [[0.38, 0.16], [0.49, 0.28], [0.62, 0.37], [0.78, 0.32], [0.92, 0.16], [0.99, 0.139]], skin, 0, 0, 0, 1, 0.74);
+    lathe(parent, [[0.49, 0.25], [0.60, 0.320], [0.71, 0.312], [0.79, 0.258], [0.92, 0.157], [1.02, 0.140]], skin, 0, 0, 0, 1, 0.74);
     lathe(parent, [[-0.08, 0.305], [0.18, 0.238], [0.40, 0.275], [0.51, 0.332], [0.58, 0.353], [0.64, 0.336], [0.67, 0.301]], fabric, 0, 0.01, 0, 1.12, 0.73);
     tube(parent, [vec(-0.347, 0.655, 0.091), vec(-0.247, 0.614, 0.179), vec(-0.147, 0.563, 0.238),
       vec(0, 0.535, 0.262), vec(0.147, 0.563, 0.238), vec(0.247, 0.614, 0.179), vec(0.347, 0.655, 0.091)], 0.016, gold);
-    tube(parent, [vec(-0.174, 0.848, 0.113), vec(-0.119, 0.775, 0.154), vec(0, 0.724, 0.184),
-      vec(0.119, 0.775, 0.154), vec(0.174, 0.848, 0.113)], 0.0065, bright);
-    oval(parent, gold, 0, 0.715, 0.185, 0.045, 0.057, 0.013);
-    oval(parent, linen, 0, 0.716, 0.197, 0.027, 0.037, 0.012);
+    tube(parent, [vec(-0.163, 0.842, 0.108), vec(-0.119, 0.776, 0.190), vec(0, 0.724, 0.236),
+      vec(0.119, 0.776, 0.190), vec(0.163, 0.842, 0.108)], 0.0065, bright);
+    oval(parent, gold, 0, 0.710, 0.233, 0.030, 0.043, 0.014);
+    oval(parent, linen, 0, 0.712, 0.245, 0.017, 0.027, 0.010);
     for (const side of [-1, 1]) {
       tube(parent, [vec(side * 0.086, 0.025, 0.179), vec(side * 0.119, 0.24, 0.179),
         vec(side * 0.147, 0.41, 0.224), vec(side * 0.18, 0.576, 0.240)], 0.008, gold);
@@ -96,9 +96,17 @@ function decorate(parent, female, mats) {
   } else {
     lathe(parent, [[-0.17, 0.33], [0.04, 0.339], [0.22, 0.298], [0.44, 0.362], [0.65, 0.407],
       [0.76, 0.351], [0.83, 0.19], [0.88, 0.151]], fabric, 0, 0, 0, 1.16, 0.66);
-    lathe(parent, [[0.81, 0.158], [0.89, 0.169], [0.96, 0.148], [0.98, 0.145]], linen, 0, 0, 0, 1, 0.82);
-    tube(parent, [vec(-0.16, 0.956, 0.068), vec(-0.104, 0.874, 0.127), vec(0, 0.797, 0.177),
-      vec(0.104, 0.874, 0.127), vec(0.16, 0.956, 0.068)], 0.025, linen);
+    lathe(parent, [[0.82, 0.173], [0.92, 0.174], [1.002, 0.152], [1.019, 0.157]], dark, 0, 0, 0.012, 1.01, 0.90);
+    lathe(parent, [[0.992, 0.153], [1.018, 0.157], [1.026, 0.155]], linen, 0, 0, 0.012, 1.02, 0.89);
+    for (const side of [-1, 1]) {
+      tube(parent, [vec(side * 0.160, 0.967, 0.062), vec(side * 0.116, 0.892, 0.140),
+        vec(side * 0.067, 0.795, 0.193), vec(side * 0.026, 0.715, 0.244)], 0.013, linen, 6);
+      tube(parent, [vec(side * 0.179, 0.916, 0.059), vec(side * 0.137, 0.842, 0.136),
+        vec(side * 0.081, 0.751, 0.223)], 0.008, gold);
+    }
+    const clasp = oval(parent, gold, 0, 0.748, 0.233, 0.044, 0.033, 0.018);
+    clasp.rotation.z = Math.PI * 0.25;
+    oval(parent, panel, 0, 0.749, 0.249, 0.021, 0.014, 0.010);
     for (const side of [-1, 1]) {
       tube(parent, [vec(side * 0.203, -0.152, 0.191), vec(side * 0.179, 0.205, 0.169),
         vec(side * 0.250, 0.472, 0.197), vec(side * 0.285, 0.625, 0.228),
@@ -217,9 +225,11 @@ function makeArm(parent, female, side, mats) {
 function makeLeg(parent, female, mats) {
   const chain = limb(parent, 0.80, 0.79);
   const { upper, lower, end } = chain;
-  lathe(upper, [[-0.85, 0.113], [-0.66, 0.127], [-0.33, 0.158], [-0.09, 0.183], [0.08, 0.165]], mats.dark, 0, 0, 0, 1, 0.87);
-  lathe(lower, [[-0.90, 0.075], [-0.69, 0.104], [-0.44, 0.122], [-0.13, 0.112], [0.05, 0.098]], mats.boot, 0, 0, 0, 1, 0.93);
-  lathe(lower, [[-0.24, 0.116], [-0.196, 0.116]], mats.gold, 0, 0, 0);
+  if (!female) {
+    lathe(upper, [[-0.85, 0.113], [-0.66, 0.127], [-0.33, 0.158], [-0.09, 0.183], [0.08, 0.165]], mats.dark, 0, 0, 0, 1, 0.87);
+    lathe(lower, [[-0.90, 0.075], [-0.69, 0.104], [-0.44, 0.122], [-0.13, 0.112], [0.05, 0.098]], mats.boot, 0, 0, 0, 1, 0.93);
+    lathe(lower, [[-0.24, 0.116], [-0.196, 0.116]], mats.gold, 0, 0, 0);
+  }
   oval(end, mats.boot, 0, -0.037, 0.100, female ? 0.091 : 0.102, 0.067, female ? 0.185 : 0.211);
   oval(end, mats.dark, 0, -0.077, 0.105, female ? 0.098 : 0.109, 0.027, female ? 0.194 : 0.218);
   return chain;
@@ -227,10 +237,10 @@ function makeLeg(parent, female, mats) {
 
 const armWeights = { step_forward: 0.31, kneel: 0.28, turn_away: 0.26 };
 const actionPoses = {
-  point:         [[0.72, 0.53, 0.76], null],
-  reach:         [[0.59, 0.48, 0.89], [-0.54, -0.23, 0.25]],
-  clutch_heart:  [[0.04, 0.43, 0.37], [-0.35, -0.12, 0.32]],
-  hands_on_head: [[0.33, 1.35, 0.24], [-0.33, 1.34, 0.24]],
+  point:         [[0.73, 0.63, 0.79], null],
+  reach:         [[0.62, 0.53, 0.95], [-0.41, -0.34, 0.20]],
+  clutch_heart:  [[0.16, 0.39, 0.32], [-0.35, -0.12, 0.29]],
+  hands_on_head: [[0.39, 1.18, 0.17], [-0.36, 1.15, 0.20]],
   turn_away:     [[0.55, -0.28, 0.19], [-0.53, -0.08, 0.29]],
   kneel:         [[0.33, 0.04, 0.52], [-0.46, -0.22, 0.22]],
   step_forward:  [[0.54, -0.23, 0.29], [-0.57, -0.22, 0.02]],
@@ -240,12 +250,32 @@ const actionPoses = {
 
 function pulse(progress, action, offset) {
   if (action === 'step_forward' || action === 'kneel') {
-    return ease((progress - 0.025) / 0.37) * (1 - ease((progress - 0.78) / 0.22));
+    return ease((progress - 0.02) / 0.34) * (1 - ease((progress - 0.75) / 0.25));
   }
   const phase = progress - offset;
-  const accent = Math.min(0.55, 0.30 + offset);
-  const envelope = ease((phase - 0.04) / 0.30) * (1 - ease((progress - 0.74) / 0.26));
-  return envelope * (0.89 + 0.13 * Math.sin((progress - accent) * Math.PI * 2.2));
+  const lift = ease((phase - 0.055) / 0.29);
+  const release = 1 - ease((phase - 0.63) / Math.max(0.10, 0.37 - offset));
+  const settle = 1 + 0.11 * Math.sin((phase - 0.31) * Math.PI * 5) * (1 - ease((phase - 0.40) / 0.30));
+  return lift * release * settle;
+}
+
+function gestureHand(action, side, forearm) {
+  switch (action) {
+    case 'reach': return [vec(side * 0.31, 0.24, 1), vec(-side * 0.22, 1, 0.06)];
+    case 'point': return [forearm, vec(-side, 0.16, 0.28)];
+    case 'clutch_heart': return [vec(-side * 0.87, 0.46, -0.12), vec(0, 0, -1)];
+    case 'hands_on_head': return [vec(-side * 0.46, 0.82, -0.21), vec(-side, 0, -0.18)];
+    case 'recoil': return [vec(side * 0.15, 0.97, 0.12), vec(0, -0.13, 1)];
+    default: return null;
+  }
+}
+
+function handRotation(direction, palm) {
+  const y = direction.clone().normalize().negate();
+  const x = new T.Vector3().crossVectors(y, palm).normalize();
+  const z = new T.Vector3().crossVectors(x, y);
+  const basis = new T.Matrix4().makeBasis(x, y, z);
+  return new T.Quaternion().setFromRotationMatrix(basis);
 }
 
 function eyeBlink(t, seed) {
@@ -272,7 +302,7 @@ export class Actor {
     this.root = group(parent);
     this.hip = group(this.root, 0, 1.70, 0);
     this.chest = group(this.hip);
-    this.head = group(this.chest, 0, 1.150, 0.022);
+    this.head = group(this.chest, 0, 1.185, 0.035);
     oval(this.chest, mats.skin, 0, 0.891, 0.011, female ? 0.138 : 0.154, 0.243, 0.133);
     decorate(this.chest, female, mats);
     this.face = makeFace(this.head, palette, female);
@@ -283,62 +313,85 @@ export class Actor {
     this.orbitDirection = female ? -1 : 1;
   }
 
-  pose({ time, expression: e, mouth = MOUTH.rest, speaking, listening, progress, actions, portrait }) {
+  pose({ time, expression: e, mouth = MOUTH.rest, speaking, listening, progress, actions, portrait, focus, delivery, reaction }) {
     const side = this.orbitDirection;
     const seed = this.index * 1.62;
     const breath = Math.sin(time * 2.46 + seed);
-    const weightShift = Math.sin(time * 1.43 + seed) * 0.033;
-    const react = listening ? Math.sin(ease((progress - 0.22) / 0.40) * Math.PI) : 0;
-    const nod = react * 0.13 + (actions.includes('nod') ? pulse(progress, 'nod', 0) * Math.sin(progress * Math.PI * 8) * 0.25 : 0);
+    const weightShift = Math.sin(time * 1.43 + seed) * 0.024;
+    const react = listening ? reaction : 0;
+    const nod = react * 0.12 + (actions.includes('nod') ? pulse(progress, 'nod', 0) * Math.sin(progress * Math.PI * 8) * 0.23 : 0);
     const kneel = actions.includes('kneel') ? pulse(progress, 'kneel', 0) : 0;
     const step = actions.includes('step_forward') ? pulse(progress, 'step_forward', 0) : 0;
     const turn = actions.includes('turn_away') ? pulse(progress, 'turn_away', 0.10) : 0;
     const recoil = actions.includes('recoil') ? pulse(progress, 'recoil', 0) : 0;
+    const reach = actions.includes('reach') ? pulse(progress, 'reach', 0) : 0;
+    const attention = portrait ? 0 : focus * (1 - turn * 0.88);
+    const partnerYaw = Math.atan2(side * 2.68, this.index === 0 ? -0.52 : 0.52);
+    const bodyYaw = portrait ? side * 0.08 : side * (0.41 + attention * 0.26 - turn * 1.42);
     this.root.position.copy(this.base);
-    this.root.rotation.y = portrait ? side * 0.08 : side * (0.50 + react * 0.16 - turn * 1.45);
-    this.hip.position.set(weightShift + side * step * 0.06, 1.67 + breath * 0.012 + e.lift * 0.31 - kneel * 0.66, step * 0.45 + kneel * 0.07 - recoil * 0.17);
-    this.chest.rotation.set(e.lean * 0.61 + kneel * 0.08 - recoil * 0.16 + breath * 0.014, side * (0.02 + react * 0.12), -weightShift * 0.90);
-    this.chest.scale.set(1 + breath * 0.009, 1 + breath * 0.008, 1 + breath * 0.017);
-    const look = Math.floor((time + seed) * 0.73);
-    const glance = Math.sin(look * 3.84 + seed) * (listening ? 0.17 : 0.27);
-    const saccade = mix(Math.sin((look - 1) * 3.84 + seed) * 0.13, glance, ease(((time + seed) * 0.73 % 1) * 12));
-    const delivery = speaking ? Math.sin(time * 3.32 + seed) * 0.028 : 0;
-    this.head.rotation.set(e.pitch + nod + delivery, portrait ? side * 0.04 : side * (-0.12 + react * 0.21 + saccade * 0.18 - 0.16 * turn), e.roll + breath * 0.023);
+    this.root.rotation.y = bodyYaw;
+    this.hip.position.set(weightShift + side * (step * 0.11 + reach * 0.035), 1.67 + breath * 0.011 + e.lift * 0.31 - kneel * 0.86,
+      step * 0.37 + kneel * 0.045 - recoil * 0.18);
+    this.chest.rotation.set(e.lean * 0.62 + kneel * 0.19 - recoil * 0.19 + reach * 0.061 + breath * 0.014 + delivery * 0.032,
+      side * (0.008 + react * 0.05 + reach * 0.075), -weightShift * 0.80 - side * reach * 0.038);
+    this.chest.scale.set(1 + breath * 0.008, 1 + breath * 0.008, 1 + breath * 0.016 + Math.max(0, delivery) * 0.015);
+    const lookTime = (time + seed) * 0.71;
+    const look = Math.floor(lookTime);
+    const drift = listening ? 0.16 : 0.28;
+    const glance = index => Math.sin(index * 3.84 + seed) * drift;
+    const saccade = mix(glance(look - 1), glance(look), ease((lookTime - look) * 13));
+    const headYaw = clamp((partnerYaw - bodyYaw) * attention * 0.49, -0.50, 0.50);
+    const partnerPitch = (this.index === 0 ? -0.14 : 0.16) * attention;
+    const tilt = e.roll + breath * 0.017 - side * react * 0.035;
+    this.head.rotation.set(e.pitch + nod + partnerPitch - delivery * 0.061,
+      portrait ? side * 0.045 : headYaw - side * (0.135 + 0.12 * turn) + saccade * 0.13, tilt);
     const micro = Math.max(0, Math.sin(time * 4.73 + seed)) ** 9 * (speaking ? 0.10 : 0.055);
-    const face = { ...e, inner: e.inner + micro + react * 0.13, asym: e.asym + micro, squint: e.squint + react * 0.08 };
-    this.face(face, mouth, eyeBlink(time, 0.43 + seed), clamp((portrait ? -side * 0.10 : side * (0.24 + react * 0.33)) + saccade, -0.73, 0.73), e.gazeY + micro + react * 0.10);
+    const face = { ...e, inner: e.inner + micro + react * 0.12 + delivery * 0.03, asym: e.asym + micro,
+      squint: e.squint + react * 0.09 + delivery * 0.045 };
+    const eyesX = portrait ? -side * 0.13 : side * attention * 0.80 + saccade;
+    const eyesY = e.gazeY + micro - partnerPitch * 2.20 + react * 0.043;
+    this.face(face, mouth, eyeBlink(time, 0.43 + seed), clamp(eyesX, -0.87, 0.87), eyesY);
 
     for (const arm of this.arms) {
       const { side: armSide } = arm;
       const leadSide = this.index === 0 ? 1 : -1;
-      const wrist = vec(armSide * (0.50 + e.guard * 0.28), -0.36 + e.guard * 0.44, 0.105 + breath * 0.025 + e.guard * 0.32);
-      const pole = vec(armSide * 0.59, -0.10, -0.41);
-      let grip = 0.37 + e.knit * 0.44;
+      const wrist = vec(armSide * (0.47 + e.guard * 0.17), -0.42 + e.guard * 0.35 + react * 0.055,
+        0.125 + breath * 0.023 + e.guard * 0.26 + react * 0.075);
+      const pole = vec(armSide * 0.38, -0.50, -0.46);
+      let grip = 0.37 + e.knit * 0.40;
       let pointing = 0;
-      let twist = armSide * 0.24;
+      let gesture;
+      let handBlend = 0;
       for (const [i, action] of actions.entries()) {
         const lead = armSide === leadSide;
         const position = actionPoses[action][lead ? 0 : 1];
         if (!position) continue;
         const emphasis = pulse(progress, action, i * 0.086) * (armWeights[action] ?? 1);
         const target = vec(position[0] * leadSide, position[1], position[2]);
-        const windup = -0.12 * Math.sin(ease(progress / 0.18) * Math.PI);
-        wrist.lerp(target, emphasis + windup);
-        if (action === 'point') pointing = emphasis;
-        if (action === 'reach' || action === 'recoil') {
-          grip = mix(grip, 0.08, emphasis);
-          twist += armSide * emphasis * 0.85;
-        } else if (action === 'clutch_heart' || action === 'hands_on_head') {
-          grip = mix(grip, 0.42, emphasis);
-          twist -= armSide * emphasis * 0.72;
+        const anticipation = 0.14 * Math.sin(ease(progress / 0.16) * Math.PI);
+        const actionWeight = emphasis - anticipation;
+        wrist.lerp(target, actionWeight);
+        if (action === 'point') pointing = clamp(emphasis);
+        if ((action === 'reach' && lead) || action === 'recoil') grip = mix(grip, 0.10, clamp(emphasis));
+        if (action === 'clutch_heart' || action === 'hands_on_head') grip = mix(grip, 0.26, clamp(emphasis));
+        if (action === 'hands_on_head') pole.lerp(vec(armSide * 0.78, -0.19, -0.39), clamp(emphasis));
+        if ((lead || action === 'hands_on_head' || action === 'recoil') &&
+            ['reach', 'point', 'clutch_heart', 'hands_on_head', 'recoil'].includes(action) && emphasis > handBlend) {
+          gesture = action;
+          handBlend = emphasis;
         }
-        if (action === 'hands_on_head') pole.y += emphasis * 0.66;
       }
-      if (speaking) wrist.z += Math.sin(time * 6.02 + armSide) * 0.024 * (1 + e.guard);
-      solve(arm, arm.shoulder, wrist, pole);
+      if (speaking) wrist.y += (0.014 + reach * 0.04) * delivery;
+      const shoulder = arm.shoulder.clone();
+      shoulder.y += e.guard * 0.068 + react * 0.030 + (armSide === leadSide ? reach * 0.038 : 0);
+      shoulder.z += (armSide === leadSide ? reach * 0.056 : 0);
+      solve(arm, shoulder, wrist, pole);
       arm.end.quaternion.copy(arm.lower.quaternion);
-      arm.end.rotateY(twist);
-      arm.end.rotateX(mix(-0.20, -0.035, pointing));
+      arm.end.rotateY(armSide * 0.23);
+      arm.end.rotateX(-0.18);
+      const forearm = DOWN.clone().applyQuaternion(arm.lower.quaternion);
+      const hand = gestureHand(gesture, armSide, forearm);
+      if (hand) arm.end.quaternion.slerp(handRotation(...hand), clamp(handBlend) * 0.93);
       for (const [i, digit] of arm.fingers.entries()) {
         const bend = i === 0 ? mix(grip, 0.01, pointing) : mix(grip, 0.95, pointing);
         digit.finger.rotation.x = -bend * 0.92;
@@ -350,15 +403,15 @@ export class Actor {
     for (const [i, leg] of this.legs.entries()) {
       const legSide = i === 0 ? -1 : 1;
       const leading = legSide === side;
-      const travel = leading ? step * 0.67 : -step * 0.08;
-      const forwardLift = Math.sin(ease((progress - 0.04) / 0.37) * Math.PI);
-      const returnLift = Math.sin(ease((progress - 0.78) / 0.22) * Math.PI);
+      const travel = leading ? step * 0.64 : 0;
+      const forwardLift = Math.sin(ease((progress - 0.02) / 0.34) * Math.PI);
+      const returnLift = Math.sin(ease((progress - 0.75) / 0.25) * Math.PI);
       const lift = leading && actions.includes('step_forward') ? (forwardLift + returnLift) * 0.20 : 0;
       const start = vec(legSide * 0.19, -0.04, 0).add(this.hip.position);
-      const target = vec(legSide * (0.22 + e.guard * 0.08), 0.12 + lift + (leading ? 0 : kneel * 0.15),
-        (leading ? 0.075 : -0.06) + travel + (leading ? kneel * 0.53 : -kneel * 0.57));
+      const target = vec(legSide * (0.22 + e.guard * 0.08), 0.105 + lift + (leading ? 0 : kneel * 0.035),
+        (leading ? 0.075 : -0.06) + travel + (leading ? kneel * 0.64 : -kneel * 0.62));
       solve(leg, start, target, vec(legSide * 0.09, 0, 1));
-      leg.end.rotation.set(leading ? -lift * 1.4 : kneel * 0.96, legSide * 0.16, 0);
+      leg.end.rotation.set(leading ? -lift * 1.4 : -kneel * 0.71, legSide * 0.16, 0);
     }
     if (this.skirt) {
       this.skirt.position.set(this.hip.position.x * 0.82, this.hip.position.y + 0.05, this.hip.position.z * 0.54);

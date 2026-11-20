@@ -93,31 +93,55 @@ export const MOUTH = {
   hush: [0.20, 0.10, 0.43, 0, 0.45], nasal: [0.18, 0.11, 0.08, 0, 0.21],
 };
 
+// Contexts where a single-character fallback can otherwise pick the wrong onset.
+const readings = [
+  ['长大', 0, 'zhang', 'zh', 'ang'],
+  ['一行字', 1, 'hang', 'h', 'ang'],
+  ['行走', 0, 'xing', 'x', 'ing'],
+  ['得走', 0, 'dei', 'd', 'ei'],
+  ['着火', 0, 'zhao', 'zh', 'ao'],
+  ['音乐', 1, 'yue', 'y', 'ue'],
+];
+
+function mandarinUnits(line) {
+  const units = pinyin(line, { toneType: 'none', type: 'all' });
+  const overrides = new Map();
+  for (const [phrase, index, pinyin, initial, final] of readings) {
+    for (let match = line.indexOf(phrase); match !== -1; match = line.indexOf(phrase, match + phrase.length)) {
+      overrides.set(match + index, { pinyin, initial, final });
+    }
+  }
+  let offset = 0;
+  return units.map(unit => {
+    const override = overrides.get(offset);
+    offset += unit.origin.length;
+    return override ? { ...unit, ...override } : unit;
+  });
+}
+
 function sound(unit) {
   const initial = unit.initial;
-  const final = (unit.final || unit.pinyin).replaceAll('v', 'ü');
+  let final = (unit.final || unit.pinyin).replaceAll('v', 'ü');
   if (!final) return { onset: 'nasal', vowel: 'mid', coda: 'rest' };
+  if (/^[jqxy]$/.test(initial) && /^u/u.test(final)) final = 'ü' + final.slice(1);
   let vowel = 'mid';
   if (/a/u.test(final)) vowel = 'open';
   else if (/^[üu]$/u.test(final)) vowel = 'pucker';
-  else if (final === 'iu' || final === 'iou') vowel = 'round';
+  else if (/^(?:iu|iou|ong|iong|üong)$/u.test(final)) vowel = 'round';
   else if (/^[ou]|[ou]$/u.test(final) && !/^i/u.test(final)) vowel = 'round';
   else if (/^[iê]/u.test(final) && !/^[zcsr]h?$/u.test(initial)) vowel = 'spread';
-  if (/^[jqx]$/.test(initial) && /^u/u.test(final)) vowel = final === 'u' ? 'pucker' : 'round';
   let onset = vowel;
   if (/^[bmp]$/u.test(initial)) onset = 'closed';
   else if (initial === 'f' || /^[zcs]$/u.test(initial)) onset = 'teeth';
   else if (/^(?:zh|ch|sh|r)$/u.test(initial)) onset = 'hush';
   else if (/^[dtln]$/u.test(initial)) onset = 'tongue';
-  else if (initial === 'w' || (/^[üu]/u.test(final) && final.length > 1)) onset = 'pucker';
-  else if (initial === 'y' && vowel !== 'pucker') onset = 'spread';
-  else if (/^i/u.test(final) && final.length > 1) onset = 'spread';
+  else if (initial === 'w' || /^[üu]/u.test(final)) onset = 'pucker';
+  else if (initial === 'y' || /^i/u.test(final) && final.length > 1) onset = 'spread';
   let coda = vowel;
   if (/n[g]?$/u.test(final)) coda = 'nasal';
-  else if (/u$/u.test(final) && vowel === 'round') coda = 'pucker';
+  else if (/(?:iu|iou|ou)$/u.test(final)) coda = 'pucker';
   else if (/[ou]$/u.test(final) && vowel === 'open') coda = 'round';
-  else if (final === 'ui' || final === 'uei') coda = 'spread';
-  else if (/i$/u.test(final) && vowel === 'open') coda = 'spread';
+  else if (/(?:ai|ei|ui|uei)$/u.test(final)) coda = 'spread';
   return { onset, vowel, coda };
 }
 
@@ -134,7 +158,7 @@ export function compileScene(source) {
     let offset = 0;
     let soundIndex = 0;
     const pace = cue.emotion === 'sorrow' ? 1.12 : cue.emotion === 'anger' ? 0.88 : 1;
-    const units = pinyin(cue.line, { toneType: 'none', type: 'all' }).map(unit => {
+    const units = mandarinUnits(cue.line).map(unit => {
       const punctuation = !unit.isZh && !/[\p{L}\p{N}]/u.test(unit.origin);
       const gap = /[。！？!?.…]/u.test(unit.origin) ? 0.40 : /[，、；：,;:—]/u.test(unit.origin) ? 0.26 : 0.085;
       const hold = punctuation ? gap : (0.155 + (soundIndex++ % 5 === 2 ? 0.047 : 0)) * pace;
@@ -158,33 +182,33 @@ function shapeBetween(a, b, factor) {
   return a.map((value, index) => mix(value, b[index], factor));
 }
 
+function mouthBoundary(before, after) {
+  if (!after || after.punctuation || !before || before.punctuation) return MOUTH.rest;
+  if (after.onset === 'closed') return MOUTH.closed;
+  return shapeBetween(MOUTH[before.coda], MOUTH[after.onset], 0.5);
+}
+
 export function sampleSpeech(beat, local) {
   const { units } = beat;
+  if (local < LEAD) return { mouth: MOUTH.rest, index: -1, viseme: 'rest', talking: false };
   const index = units.findIndex(unit => local < unit.end);
-  if (local < LEAD - 0.055) return { mouth: MOUTH.rest, index: -1, viseme: 'rest', talking: false };
   if (index < 0) return { mouth: MOUTH.rest, index: units.length, viseme: 'rest', talking: false };
   const unit = units[index];
   const previous = units[index - 1];
   const next = units[index + 1];
+  if (unit.punctuation) return { mouth: MOUTH.rest, index, viseme: 'rest', talking: false };
   const phase = clamp((local - unit.start) / (unit.end - unit.start));
-  if (unit.punctuation) {
-    const mouth = !previous || previous.punctuation ? MOUTH.rest : shapeBetween(MOUTH[previous.coda], MOUTH.rest, ease(phase * 4));
-    return { mouth, index, viseme: 'rest', talking: false };
-  }
   let mouth;
   if (phase < 0.24) {
-    const carry = previous && !previous.punctuation && unit.onset !== 'closed' ? 0.35 : 0;
-    const entry = shapeBetween(MOUTH[unit.onset], MOUTH[previous?.coda ?? 'rest'], carry);
-    mouth = shapeBetween(entry, MOUTH[unit.onset], ease(phase / 0.24));
+    mouth = shapeBetween(mouthBoundary(previous, unit), MOUTH[unit.onset], ease(phase / 0.075));
   } else if (phase < 0.55) {
     mouth = shapeBetween(MOUTH[unit.onset], MOUTH[unit.vowel], ease((phase - 0.24) / 0.31));
+  } else if (phase < 0.84) {
+    mouth = shapeBetween(MOUTH[unit.vowel], MOUTH[unit.coda], ease((phase - 0.55) / 0.29));
   } else {
-    mouth = shapeBetween(MOUTH[unit.vowel], MOUTH[unit.coda], ease((phase - 0.55) / 0.34));
-    if (next && !next.punctuation && phase > 0.83) {
-      mouth = shapeBetween(mouth, MOUTH[next.onset], ease((phase - 0.83) / 0.17) * 0.48);
-    }
+    mouth = shapeBetween(MOUTH[unit.coda], mouthBoundary(unit, next), ease((phase - 0.84) / 0.16));
   }
-  return { mouth, index, viseme: phase < 0.30 ? unit.onset : phase > 0.82 ? unit.coda : unit.vowel, talking: local >= LEAD };
+  return { mouth, index, viseme: phase < 0.30 ? unit.onset : phase > 0.82 ? unit.coda : unit.vowel, talking: true };
 }
 
 export function sampleScene(scene, time) {

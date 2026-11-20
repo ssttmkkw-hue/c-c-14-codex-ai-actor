@@ -15,7 +15,7 @@ npm run dev
 
 ## 排练
 
-- 点击播放或按空格键。拖动时间线，或点击场景台词，回看同一姿态和口型。
+- 点击播放或按空格键。拖动时间线或点击场景台词回看指定位置。用 `[` / `]` 逐帧检查动作，用字幕按钮显示或隐藏逐字提示。
 - 在**排练台**选演员、情绪、强度和动作，然后输入一句台词并点击**开始表演**。
 - 在**剧本**填写多行台词。用 `+` 混合情绪，用逗号安排多个动作。
 - 在**表情图谱**比较两位演员的九种表情及强度。切回排练台可在原来的时间点继续。
@@ -30,7 +30,7 @@ node tools/shots.mjs
 ACTOR_URL=http://127.0.0.1:5814/ node tools/shots.mjs /workspace/codex-actor-shots
 ```
 
-截图脚本需要已运行的舞台和 Chromium。默认从 `/workspace/pwtool/node_modules/playwright` 加载 Playwright，可用 `PLAYWRIGHT_ROOT` 覆盖。默认保存为 `/workspace/codex-actor-shots/r1-*.png`，可通过命令行参数更改目录，通过 `ACTOR_SHOT_PREFIX` 更改前缀。
+截图脚本需要已运行的舞台和 Chromium。默认从 `/workspace/pwtool/node_modules/playwright` 加载 Playwright，可用 `PLAYWRIGHT_ROOT` 覆盖。默认保存为 `/workspace/codex-actor-shots/r2-*.png`，可通过命令行参数更改目录，通过 `ACTOR_SHOT_PREFIX` 更改前缀。
 
 [表演 API](docs/PERFORMANCE_API.md) · [研究](docs/RESEARCH.md) · [设计](docs/DESIGN.md) · [署名与许可](docs/CREDITS.md) · [迭代记录](docs/ROUNDS.md)
 

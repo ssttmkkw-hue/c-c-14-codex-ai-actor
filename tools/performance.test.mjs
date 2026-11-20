@@ -53,3 +53,20 @@ test('emotion intensity zero rests and positive weights blend without overshooti
   assert.equal(both.frown, (joy.frown + sorrow.frown) / 2);
   assert.equal(blendedExpression([{ emotion: 'fear', intensity: 0 }]).eye, 0);
 });
+
+
+test('adjacent Mandarin mouth poses meet at syllable and punctuation boundaries', () => {
+  const { beats: [beat] } = compileScene('罗密欧: 看，妈！房里一行字着火了。');
+  assert.equal(beat.units.find(unit => unit.char === '着').pinyin, 'zhao');
+  assert.equal(beat.units.find(unit => unit.char === '行').pinyin, 'hang');
+  for (const unit of beat.units.filter(unit => !unit.punctuation)) {
+    for (const t of [unit.start, unit.end]) {
+      const before = sampleSpeech(beat, t - 1e-7).mouth;
+      const after = sampleSpeech(beat, t).mouth;
+      before.forEach((value, channel) => assert.ok(Math.abs(value - after[channel]) < 0.001));
+    }
+  }
+  const { beats: [rounded] } = compileScene('朱丽叶: 月下钟声。');
+  assert.equal(rounded.units[0].onset, 'pucker');
+  assert.equal(rounded.units[2].vowel, 'round');
+});
