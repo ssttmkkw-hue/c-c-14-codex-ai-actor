@@ -15,9 +15,9 @@
           <span>ACTOR<span class="brand-accent">.</span>STUDIO</span>
         </a>
         <nav class="main-nav" aria-label="工作区">
-          <button type="button" data-tab="live" aria-current="page">排练台</button>
-          <button type="button" data-tab="script">剧本</button>
-          <button type="button" data-tab="gallery">表情图谱</button>
+          <button type="button" data-tab="live" aria-controls="live-panel" aria-current="page">排练台</button>
+          <button type="button" data-tab="script" aria-controls="script-panel">剧本</button>
+          <button type="button" data-tab="gallery" aria-controls="gallery-panel">表情图谱</button>
         </nav>
 
       </div>
@@ -34,7 +34,7 @@
 
       <div class="work-grid">
         <section class="performance-column" aria-label="舞台与场景时间线">
-          <div class="monitor">
+          <div class="monitor" id="monitor">
             <div class="monitor-bar">
               <div class="monitor-title"><span class="iris-icon" aria-hidden="true"></span> 舞台监看</div>
               <div class="monitor-state"><span id="stage-state">就绪</span><span class="monitor-divider"></span><span id="shot-label">全景</span></div>
@@ -55,13 +55,13 @@
                 <button type="button" id="previous" class="icon-button" aria-label="上一句" title="上一句"></button>
                 <button type="button" id="play" class="icon-button play" aria-label="播放" title="播放 / 暂停（空格）"></button>
                 <button type="button" id="next" class="icon-button" aria-label="下一句" title="下一句"></button>
-                <output id="timecode" class="timecode" aria-label="当前时间与总时长">00:00 <b>/</b> 00:00</output>
+                <span id="timecode" class="timecode" aria-label="当前时间与总时长">00:00 <b>/</b> 00:00</span>
                 <button type="button" id="captions-toggle" class="icon-button" aria-label="字幕" aria-pressed="true" title="显示或隐藏字幕"></button>
                 <button type="button" id="voice" class="icon-button voice" aria-label="开启朗读" aria-pressed="false" title="开启朗读"></button>
                 <button type="button" id="fullscreen" class="icon-button" aria-label="全屏舞台" title="全屏舞台"></button>
               </div>
               <div class="track">
-                <div class="cues" id="cues"></div>
+                <div class="cues" id="cues" aria-hidden="true"></div>
                 <input type="range" id="timeline" min="0" max="1" step="0.001" value="0" aria-label="拖动场景时间线">
                 <div class="ruler" aria-hidden="true"><span>0:00</span><span class="step-hint">[ / ] 逐帧</span><span id="duration">0:00</span></div>
               </div>
@@ -107,6 +107,13 @@
             <header class="inspector-header"><div class="panel-icon" id="script-icon" aria-hidden="true"></div><div><h2>剧本</h2></div></header>
             <div class="control-content">
               <form id="script-form">
+                <div class="field">
+                  <label for="script-example">剧本示例</label>
+                  <div class="script-picker">
+                    <select id="script-example"></select>
+                    <button class="outline" id="fill-script" type="button" title="用所选示例替换当前编辑内容">填入</button>
+                  </div>
+                </div>
                 <label class="field" for="script">编辑排练指令
                   <textarea id="script" rows="15" required spellcheck="false"></textarea>
                 </label>

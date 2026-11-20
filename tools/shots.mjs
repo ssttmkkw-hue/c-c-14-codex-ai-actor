@@ -9,7 +9,7 @@ const playwrightRoot = process.env.PLAYWRIGHT_ROOT ?? '/workspace/pwtool/node_mo
 const { chromium } = require(playwrightRoot);
 const url = process.env.ACTOR_URL ?? 'http://127.0.0.1:5714/';
 const out = resolve(process.argv[2] ?? '/workspace/codex-actor-shots');
-const prefix = process.env.ACTOR_SHOT_PREFIX ?? 'r2-';
+const prefix = process.env.ACTOR_SHOT_PREFIX ?? 'r3-';
 const viewport = { width: 1440, height: 1040 };
 const args = ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 const emotions = ['neutral', 'joy', 'sorrow', 'anger', 'fear', 'surprise', 'disgust', 'tender', 'contempt'];
@@ -61,6 +61,23 @@ try {
   assert.equal((await read()).beatIndex, 0);
 
   const slider = page.getByRole('slider', { name: '拖动场景时间线' });
+  const track = await slider.boundingBox();
+  await page.evaluate(() => window.actorStudio.play());
+  await page.mouse.move(track.x + track.width * 0.37, track.y + track.height * 0.5);
+  await page.mouse.down();
+  assert.equal((await read()).playing, false);
+  await page.mouse.move(track.x + track.width * 0.46, track.y + track.height * 0.5);
+  assert.ok((await read()).time > 16);
+  await page.mouse.up();
+  assert.equal((await read()).playing, true);
+  await page.evaluate(() => window.actorStudio.pause());
+
+  await page.getByRole('button', { name: '全屏舞台', exact: true }).click();
+  await page.waitForFunction(() => document.fullscreenElement?.id === 'monitor');
+  assert.equal(await slider.isVisible(), true);
+  await page.getByRole('button', { name: '退出全屏', exact: true }).click();
+  await page.waitForFunction(() => !document.fullscreenElement);
+
   await slider.focus();
   await slider.press('End');
   await page.waitForFunction(() => window.actorStudio.getState().beatIndex === 7);
@@ -156,6 +173,24 @@ try {
   await page.getByRole('button', { name: '排演剧本' }).click();
   assert.equal((await read()).source, 'script');
   assert.deepEqual((await read()).actions, ['reach', 'nod']);
+
+  await page.locator('#script-example').selectOption('hamlet');
+  await page.getByRole('button', { name: '填入', exact: true }).click();
+  await page.getByRole('button', { name: '排演剧本' }).click();
+  await page.getByRole('heading', { name: '哈姆雷特', exact: true }).waitFor();
+  assert.deepEqual((await read()).cast, ['哈姆雷特', '奥菲利娅']);
+  await page.evaluate(() => {
+    window.actorStudio.pause();
+    window.actorStudio.setLighting('cold');
+    window.actorStudio.setCamera('medium');
+  });
+  await page.locator('#line-list li:nth-child(3) button').click();
+  await page.evaluate(() => {
+    const director = window.actorStudio;
+    director.seek(director.getState().time + 1.34);
+  });
+  assert.equal((await read()).speaker, '奥菲利娅');
+  await shot(page, 'script-hamlet');
 
   await page.getByRole('button', { name: '载入示例' }).click();
   await page.getByRole('button', { name: '排练台', exact: true }).click();

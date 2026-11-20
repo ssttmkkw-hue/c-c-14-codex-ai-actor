@@ -12,16 +12,18 @@ export class MandarinVoice {
     return chinese?.find(voice => /^zh[-_](CN|Hans)/i.test(voice.lang)) ?? chinese?.[0];
   }
 
-  start(beat, local) {
-    if (!this.enabled || !this.voice || this.current?.beat === beat || local < beat.units[0].start || local >= beat.speechEnd) return;
+  start(beat, local, slot) {
+    if (!this.enabled || this.current?.beat === beat || local < beat.units[0].start || local >= beat.speechEnd) return;
+    const voice = this.voice;
+    if (!voice) return;
     this.stop();
     const first = beat.units.find(unit => unit.end > local && !unit.punctuation);
     if (!first) return;
     const utterance = new SpeechSynthesisUtterance(beat.line.slice(first.offset));
-    utterance.voice = this.voice;
+    utterance.voice = voice;
     utterance.lang = utterance.voice.lang;
     utterance.rate = beat.emotion === 'sorrow' ? 0.92 : beat.emotion === 'anger' ? 1.10 : 1;
-    utterance.pitch = beat.speaker === '朱丽叶' ? 1.1 : 0.92;
+    utterance.pitch = slot === 1 ? 1.1 : 0.92;
     const delivery = { beat, utterance };
     this.current = delivery;
     utterance.onboundary = event => {

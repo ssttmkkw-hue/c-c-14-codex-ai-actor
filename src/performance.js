@@ -20,6 +20,11 @@ export const DEMO = `罗密欧 [tender 0.72 | reach, step_forward]: 轻声！那
 朱丽叶 [fear 0.84 | hands_on_head]: 谁在黑夜里偷听我说话？
 罗密欧 [tender 0.9 | reach]: 我的名字是你的仇敌。倘若写在纸上，我定把它撕掉。`;
 
+export const HAMLET = `哈姆雷特 [sorrow 0.79 + fear 0.21 | clutch_heart]: 死去，睡去。睡去，也许还会做梦。啊，难处就在这儿。
+哈姆雷特 [tender 0.67 + sorrow 0.26 | reach]: 且慢，是奥菲利娅。你祈祷的时候，请记起我的罪。
+奥菲利娅 [tender 0.58 + fear 0.33 | nod]: 殿下，这些天来，您可安好？
+哈姆雷特 [contempt 0.36 + sorrow 0.48 | turn_away]: 多谢你。我很好，很好，很好。`;
+
 export const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
 export const mix = (a, b, weight) => a + (b - a) * weight;
 export function ease(value) {

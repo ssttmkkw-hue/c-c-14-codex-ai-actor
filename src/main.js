@@ -1,5 +1,5 @@
 import './style.css';
-import { ACTIONS, CAST, DEMO, EMOTIONS, clamp, compileScene, sampleScene } from './performance.js';
+import { ACTIONS, CAST, DEMO, HAMLET, EMOTIONS, clamp, compileScene, sampleScene } from './performance.js';
 import { CAMERAS, LIGHTS, Stage } from './stage.js';
 import { MandarinVoice } from './voice.js';
 
@@ -8,6 +8,10 @@ const narrowView = matchMedia('(max-width: 760px)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const captionRanges = new WeakMap();
 const FRAME_STEP = 1 / 24;
+const examples = {
+  romeo: { title: '罗密欧与朱丽叶', act: '第二幕 · 第二场', note: '月下花园 · 阳台场景', script: DEMO },
+  hamlet: { title: '哈姆雷特', act: '第三幕 · 第一场', note: '独白之后 · 与奥菲利娅', script: HAMLET },
+};
 const icons = {
   play: '<path d="M8 4.9v14.2L19 12 8 4.9Z" fill="currentColor" stroke-width="1.4"/>',
   pause: '<path d="M8 5v14m8-14v14" stroke-width="3"/>',
@@ -57,6 +61,7 @@ let lastSubtitle = -2;
 let correction = 0;
 let lastBeatNode;
 let lastSegment;
+let scrub;
 const voice = new MandarinVoice(
   (beat, local) => {
     if (!state.playing || state.portrait || sampleScene(state.scene, state.time).beat !== beat) return;
@@ -85,6 +90,7 @@ function fillSelect(id, values, initial) {
 fillSelect('gesture', { '': '自然站姿', ...ACTIONS }, 'reach');
 fillSelect('camera', CAMERAS, state.camera);
 fillSelect('lighting', LIGHTS, state.lighting);
+fillSelect('script-example', Object.fromEntries(Object.entries(examples).map(([name, example]) => [name, example.title])), 'romeo');
 $('script').value = DEMO;
 $('line').value = '轻声！那边窗子里亮起来的是什么光？';
 
@@ -181,6 +187,7 @@ function rebuildTimeline() {
     const row = document.createElement('li');
     const button = document.createElement('button');
     button.className = 'cue-button';
+    button.dataset.rig = sceneRig(beat.speaker);
     button.type = 'button';
     const timestamp = document.createElement('time');
     timestamp.textContent = timecode(beat.start);
@@ -196,6 +203,19 @@ function rebuildTimeline() {
     row.append(button);
     $('line-list').append(row);
   }
+}
+
+function sceneRig(speaker) {
+  return state.scene.slots.indexOf(speaker);
+}
+
+function followCurrentCue() {
+  if (!lastBeatNode) return;
+  const lines = $('line-list');
+  const row = lastBeatNode.getBoundingClientRect();
+  const list = lines.getBoundingClientRect();
+  if (row.bottom > list.bottom) lines.scrollTop += row.bottom - list.bottom;
+  else if (row.top < list.top) lines.scrollTop += row.top - list.top;
 }
 
 function captionRange(beat, index) {
@@ -224,6 +244,7 @@ function updateFrame(frame) {
   $('shot-label').textContent = CAMERAS[camera];
   if (state.portrait) {
     $('caption-speaker').textContent = state.portraitActor;
+    $('caption-speaker').dataset.rig = CAST.indexOf(state.portraitActor);
     $('caption-text').textContent = EMOTIONS[state.portraitEmotion];
     lastCue = null;
     return;
@@ -236,6 +257,8 @@ function updateFrame(frame) {
     lastBeatNode?.setAttribute('aria-current', 'true');
     lastSegment?.classList.add('current');
     $('caption-speaker').textContent = beat.speaker;
+    $('caption-speaker').dataset.rig = sceneRig(beat.speaker);
+    followCurrentCue();
     lastSubtitle = -2;
     lastCue = beat;
   }
@@ -298,10 +321,11 @@ function loadScene(source, { autoplay = false, kind = 'custom' } = {}) {
   if (state.portrait) setTab('live');
   state.scene = scene;
   state.source = kind;
-  const sample = kind === 'demo';
-  $('scene-title').textContent = sample ? '罗密欧与朱丽叶' : kind === 'improv' ? '即兴排练' : '剧本排练';
-  $('scene-context').textContent = sample ? 'WILLIAM SHAKESPEARE / 第二幕 · 第二场' : 'ACTOR STUDIO / 自定义场景';
-  $('scene-note').textContent = sample ? '月下花园 · 阳台场景' : scene.cast.join(' · ');
+  const sample = kind === 'demo' ? examples.romeo : kind === 'script'
+    ? Object.values(examples).find(example => typeof source === 'string' && example.script === source.trim()) : null;
+  $('scene-title').textContent = sample?.title ?? (kind === 'improv' ? '即兴排练' : '剧本排练');
+  $('scene-context').textContent = sample ? `WILLIAM SHAKESPEARE / ${sample.act}` : 'ACTOR STUDIO / 自定义场景';
+  $('scene-note').textContent = sample?.note ?? scene.cast.join(' · ');
   state.playing = false;
   seek(0);
   rebuildTimeline();
@@ -368,6 +392,11 @@ $('line-form').addEventListener('submit', event => {
     notice('live-notice', error.message);
   }
 });
+$('fill-script').addEventListener('click', () => {
+  $('script').value = examples[$('script-example').value].script;
+  notice('script-notice', '');
+  $('script').focus();
+});
 $('script-form').addEventListener('submit', event => {
   event.preventDefault();
   try {
@@ -382,11 +411,25 @@ for (const button of document.querySelectorAll('[data-tab]')) button.addEventLis
 $('load-demo').addEventListener('click', () => {
   if (state.tab === 'gallery') setTab('live');
   $('script').value = DEMO;
+  $('script-example').value = 'romeo';
   notice('live-notice', '');
   notice('script-notice', '');
   loadScene(DEMO, { kind: 'demo' });
 });
 $('play').addEventListener('click', () => play(!state.playing));
+$('timeline').addEventListener('pointerdown', event => {
+  if (!event.isPrimary || event.button !== 0) return;
+  scrub = { pointer: event.pointerId, resume: state.playing };
+  if (state.playing) play(false);
+});
+function finishScrub(event) {
+  if (!scrub || event.pointerId !== scrub.pointer) return;
+  const shouldResume = scrub.resume && state.time < state.scene.duration;
+  scrub = null;
+  if (shouldResume) play();
+}
+window.addEventListener('pointerup', finishScrub);
+window.addEventListener('pointercancel', finishScrub);
 $('timeline').addEventListener('input', () => seek(Number($('timeline').value)));
 $('voice').addEventListener('click', () => voice.toggle());
 $('captions-toggle').addEventListener('click', () => {
@@ -394,11 +437,24 @@ $('captions-toggle').addEventListener('click', () => {
   $('captions-toggle').setAttribute('aria-pressed', state.captions);
   updateTransport();
 });
-$('fullscreen').addEventListener('click', async () => {
-  if (document.fullscreenElement) await document.exitFullscreen();
-  else await $('viewport').requestFullscreen().catch(() => {});
+const fullscreen = $('fullscreen');
+fullscreen.disabled = !document.fullscreenEnabled;
+fullscreen.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await $('monitor').requestFullscreen();
+  } catch {
+    fullscreen.title = '浏览器无法开启全屏';
+  }
 });
-document.addEventListener('fullscreenchange', () => { dirty = true; });
+document.addEventListener('fullscreenchange', () => {
+  const expanded = document.fullscreenElement === $('monitor');
+  fullscreen.setAttribute('aria-pressed', expanded);
+  const label = expanded ? '退出全屏' : '全屏舞台';
+  fullscreen.setAttribute('aria-label', label);
+  fullscreen.title = label;
+  dirty = true;
+});
 function adjacent(direction) {
   const { beat, local } = sampleScene(state.scene, state.time);
   const index = beat.index + (direction < 0 && local > 0.85 ? 0 : direction);
@@ -432,7 +488,7 @@ function tick(now) {
     state.time = Math.min(state.scene.duration, state.time + delta + adjustment);
     const { beat, local } = sampleScene(state.scene, state.time);
     if (voice.current && voice.current.beat !== beat) voice.stop();
-    voice.start(beat, local);
+    voice.start(beat, local, sceneRig(beat.speaker));
     if (state.time >= state.scene.duration) play(false);
     dirty = true;
   }
@@ -447,7 +503,11 @@ render();
 
 window.actorStudio = Object.freeze({
   ready: Boolean(stage),
-  loadScene,
+  loadScene: (source, options) => {
+    const duration = loadScene(source, options);
+    render();
+    return duration;
+  },
   play,
   pause: () => play(false),
   seek: time => seek(time, true),

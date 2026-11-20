@@ -79,28 +79,32 @@ svg { width: 17px; height: 17px; flex: none; vertical-align: middle; }
   aspect-ratio: 1.99; min-height: 282px; background: #101820;
 }
 #stage { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
-.viewport:fullscreen { display: flex; flex-direction: column; width: 100vw; height: 100vh; }
-.viewport:fullscreen .stage-image { flex: 1; min-height: 0; aspect-ratio: auto; }
+.monitor:fullscreen { border: 0; border-radius: 0; display: flex; flex-direction: column; }
+.monitor:fullscreen .viewport { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.monitor:fullscreen .stage-image { flex: 1; min-height: 0; aspect-ratio: auto; }
+.monitor:fullscreen .monitor-bar, .monitor:fullscreen .transport { flex: none; }
 .view-fade {
   position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 45%, transparent 55%, #0a0c1754 100%), linear-gradient(0deg, #100f1b4d, transparent 17%);
+  background: radial-gradient(ellipse at 50% 42%, transparent 43%, #0b0a1e64 100%), linear-gradient(0deg, #100f1b49, transparent 20%);
 }
 .caption {
-  min-height: 53px; display: grid; grid-template-columns: max-content 1fr;
+  min-height: 53px; display: grid; grid-template-columns: max-content minmax(0, 1fr);
   align-items: center; gap: 15px; padding: 9px 17px; color: #f7e9eb;
   border-top: 1px solid #34303a; background: #1a1720;
 }
 .caption > span {
   color: #ffc3a9; font-size: 13px; letter-spacing: .09em; font-weight: 700;
   padding-right: 14px; border-right: 1px solid #5a4148; white-space: nowrap;
+  max-width: min(22vw, 135px); overflow: hidden; text-overflow: ellipsis;
 }
+.caption [data-rig="1"], .cue-button[data-rig="1"] strong { color: #eeb7cc; }
 .caption p {
   font: 650 clamp(14px, 1.32vw, 18px)/1.52 var(--serif);
   margin: 0; min-width: 0; overflow-wrap: anywhere;
 }
 .caption .read { color: #f9e8da; }
 .caption .unread { color: #cfc5d1; }
-.caption mark { padding: 0 1px; color: #240e0b; background: #ffc6a2; border-radius: 2px; }
+.caption mark { color: #240e0b; background: #ffc6a2; border-radius: 2px; }
 .render-error { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; padding: 25px; text-align: center; }
 .transport { padding: 10px 16px 9px; border-top: 1px solid #282633; }
 .transport-controls { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; }
@@ -137,6 +141,8 @@ svg { width: 17px; height: 17px; flex: none; vertical-align: middle; }
 .cue-button time { font: 12px var(--mono); color: var(--quiet); }
 .cue-button strong { font-size: 13px; color: #efad9b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cue-button span { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cue-button[aria-current] span { white-space: normal; overflow-wrap: anywhere; }
+.cue-button:focus-visible { outline-offset: -3px; }
 .inspector { overflow: hidden; }
 .inspector-header { display: flex; align-items: center; gap: 11px; height: 55px; padding: 0 16px; border-bottom: 1px solid var(--line); }
 .panel-icon { display: grid; place-items: center; width: 34px; height: 34px; color: #f3a991; background: #332330; border: 1px solid #563943; border-radius: 8px; }
@@ -185,6 +191,8 @@ legend { padding: 0; margin-bottom: 8px; }
 }
 .field textarea { resize: vertical; min-height: 67px; line-height: 1.55; }
 #script { font-size: 13px; font-family: var(--mono); min-height: 175px; }
+.script-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.script-picker button { padding-block: 6px; white-space: nowrap; }
 .field textarea::placeholder { color: #a196ad; }
 #line-form .field, #script-form .field { margin-bottom: 9px; }
 .primary { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; min-height: 39px; padding: 6px 8px; border: 0; border-radius: 7px; background: #f3a080; color: #201417; font-size: 14px; font-weight: 720; }
@@ -223,6 +231,12 @@ legend { padding: 0; margin-bottom: 8px; }
   .caption { min-height: 62px; gap: 10px; padding: 8px 12px; }
   .caption > span { padding-right: 9px; }
   .monitor { scroll-margin-top: 10px; }
+  .transport { padding-inline: 10px; }
+  .transport-controls { gap: 5px; }
+  .transport-controls .icon-button { min-width: 34px; min-height: 38px; }
+  .track input { height: 30px; top: -12px; touch-action: pan-y; }
+  .caption p { font-size: 16px; }
+  .actor-options button, .emotion-options button { min-height: 38px; }
 }
 @media (max-width: 400px) {
   .topbar, .workspace { padding-inline: 10px; }
@@ -232,6 +246,8 @@ legend { padding: 0; margin-bottom: 8px; }
   .eyebrow { letter-spacing: .03em; gap: 5px; font-size: 11px; }
   .scene-heading h1 { font-size: 30px; }
   .load-demo svg { display: none; }
+  .timecode { padding-inline: 2px; }
+  .transport-controls .icon-button { min-width: 29px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }

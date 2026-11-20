@@ -6,14 +6,14 @@ const PALETTES = [
   {
     skin: '#c89172', lid: '#aa7666', lower: '#b18370', nostril: '#623d38', brow: '#3c2721',
     lip: '#91554b', lowerLip: '#ac6958',
-    hair: '#231717', locks: ['#4c332c', '#50372c', '#3f2a25'], thread: '#624637',
+    hair: '#231717', locks: ['#4c332c', '#50372c', '#3f2a25'],
     iris: ['#947453', '#666044'], fabric: '#1b3a45', sleeve: '#23414a', panel: '#30515b',
     shadow: '#12222c', gold: '#b18c59', bright: '#d3ab73', linen: '#cbb391', boot: '#25242a',
   },
   {
     skin: '#deb09a', lid: '#b4817d', lower: '#bd8e83', nostril: '#7f4c47', brow: '#4b2e2c',
     lip: '#a04c52', lowerLip: '#bb6c6b',
-    hair: '#261b25', locks: ['#533644', '#603e4c', '#442d3a'], thread: '#76515b',
+    hair: '#261b25', locks: ['#533644', '#603e4c', '#442d3a'],
     iris: ['#967c55', '#476c66'], fabric: '#662e3f', sleeve: '#6a3140', panel: '#8b4857',
     shadow: '#382331', gold: '#b08763', bright: '#d9ad7e', linen: '#e0bca4', boot: '#402a36',
   },
@@ -26,9 +26,9 @@ const expressions = {
   joy:      [0.12, 0.30, 0, -0.09, 0.72, 1, 0, 0.36, 0, 0, 0.10, -0.04, -0.11, -0.08, 0.13, -0.10, 0.11],
   sorrow:   [1, -0.41, 0.18, -0.28, 0.15, 0, 0.79, 0.05, 0, 0, -0.11, 0.17, 0.08, 0.25, -0.11, 0.21, -0.43],
   anger:    [-0.30, 0.31, 1, -0.13, 0.69, 0, 0.24, 0.13, 0.47, 0.23, -0.09, 0.10, 0.02, 0.26, 0.06, 0.26, 0.14],
-  fear:     [0.86, 0.30, 0.52, 0.79, 0.12, 0, 0.55, 0.48, 0.84, 0, 0.09, -0.12, -0.12, -0.29, -0.08, 0.47, 0.17],
+  fear:     [0.86, 0.24, 0.66, 0.73, 0.41, 0, 0.60, 0.39, 0.88, 0, 0.15, -0.10, -0.13, -0.32, -0.14, 0.51, 0.13],
   surprise: [0.84, 1.00, 0, 0.93, 0, 0, 0, 0.85, -0.21, 0, 0.03, -0.15, 0.04, -0.24, 0.12, 0.17, 0.28, 0.59],
-  disgust:  [-0.18, 0.12, 0.65, -0.26, 0.63, 0, 0.44, 0.07, 0, 1, 0.39, -0.14, -0.10, -0.17, 0.03, 0.20, 0.19],
+  disgust:  [-0.25, 0.14, 0.66, -0.29, 0.78, 0, 0.49, 0.04, 0.06, 1, 0.34, -0.11, -0.09, -0.17, 0.03, 0.21, 0.15],
   tender:   [0.43, 0.04, 0, -0.13, 0.23, 0.38, 0, 0.015, 0, 0, 0.08, 0.015, -0.12, 0.11, -0.02, -0.07, -0.03],
   contempt: [-0.12, 0.03, 0.19, -0.29, 0.38, 0.09, 0.17, 0, 0.12, 0.14, 1, -0.12, 0.14, -0.14, 0.04, -0.04, -0.12],
 };
@@ -53,16 +53,26 @@ function wovenPattern(scale) {
     ctx.fillRect(i, 0, 1, 256);
     ctx.fillRect(0, i, 256, 1);
   }
-  ctx.strokeStyle = '#a4a4a444';
-  ctx.lineWidth = 1.5;
-  for (let x = -32; x <= 256; x += 32) {
-    for (let y = -32; y <= 256; y += 32) {
-      const cx = x + (y % 64 === 0 ? 16 : 0);
+  ctx.lineWidth = 1.25;
+  for (let y = -32; y <= 290; y += 42) {
+    for (let x = -32; x <= 290; x += 42) {
+      const cx = x + (Math.round(y / 42) % 2 === 0 ? 21 : 0);
+      ctx.strokeStyle = '#5e59633b';
       ctx.beginPath();
-      ctx.moveTo(cx, y - 12);
-      ctx.quadraticCurveTo(cx + 13, y, cx, y + 12);
-      ctx.quadraticCurveTo(cx - 13, y, cx, y - 12);
+      ctx.moveTo(cx, y - 17);
+      ctx.bezierCurveTo(cx + 18, y - 6, cx + 18, y + 6, cx, y + 17);
+      ctx.bezierCurveTo(cx - 18, y + 6, cx - 18, y - 6, cx, y - 17);
       ctx.stroke();
+      ctx.strokeStyle = '#fff1c639';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(cx, y + 8);
+        ctx.quadraticCurveTo(cx + side * 15, y + 1, cx + side * 4, y - 4);
+        ctx.quadraticCurveTo(cx + side * 1, y - 6, cx, y - 11);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#6d657c46';
+      ctx.fillRect(cx - 1, y - 1, 2, 2);
     }
   }
   const texture = new T.CanvasTexture(canvas);
@@ -76,37 +86,50 @@ function wovenPattern(scale) {
 function decorate(parent, female, mats) {
   const { gold, bright, panel, dark, fabric, linen, skin } = mats;
   if (female) {
-    lathe(parent, [[0.49, 0.25], [0.60, 0.320], [0.71, 0.312], [0.79, 0.258], [0.92, 0.157], [1.02, 0.140]], skin, 0, 0, 0, 1, 0.74);
-    lathe(parent, [[-0.08, 0.305], [0.18, 0.238], [0.40, 0.275], [0.51, 0.332], [0.58, 0.353], [0.64, 0.336], [0.67, 0.301]], fabric, 0, 0.01, 0, 1.12, 0.73);
-    tube(parent, [vec(-0.347, 0.655, 0.091), vec(-0.247, 0.614, 0.179), vec(-0.147, 0.563, 0.238),
-      vec(0, 0.535, 0.262), vec(0.147, 0.563, 0.238), vec(0.247, 0.614, 0.179), vec(0.347, 0.655, 0.091)], 0.016, gold);
+    lathe(parent, [[0.46, 0.30], [0.54, 0.312], [0.64, 0.315], [0.71, 0.300], [0.79, 0.258],
+      [0.92, 0.157], [1.02, 0.140]], skin, 0, 0, 0, 1, 0.73);
+    const cut = angle => 0.676 - Math.max(0, Math.cos(angle)) ** 2 * 0.116;
+    const bodice = (angle, t) => {
+      const y = mix(-0.093, cut(angle), t);
+      const r = 0.246 + 0.073 * ease((y - 0.23) / 0.35) + 0.048 * ease((0.16 - y) / 0.26);
+      return vec(Math.sin(angle) * r * 1.14, y, Math.cos(angle) * r * 0.80);
+    };
+    mesh(parent, surface(64, 20, (u, v) => bodice(u * Math.PI * 2, v).toArray()), fabric);
+    const neckline = Array.from({ length: 65 }, (_, i) => bodice(i / 64 * Math.PI * 2, 1));
+    tube(parent, neckline, 0.015, linen, 7, 66);
+    tube(parent, neckline.map(p => p.clone().add(vec(p.x * 0.014, -0.032, p.z * 0.035))), 0.0065, gold, 6, 66);
     tube(parent, [vec(-0.163, 0.842, 0.108), vec(-0.119, 0.776, 0.190), vec(0, 0.724, 0.236),
       vec(0.119, 0.776, 0.190), vec(0.163, 0.842, 0.108)], 0.0065, bright);
     oval(parent, gold, 0, 0.710, 0.233, 0.030, 0.043, 0.014);
     oval(parent, linen, 0, 0.712, 0.245, 0.017, 0.027, 0.010);
     for (const side of [-1, 1]) {
-      tube(parent, [vec(side * 0.086, 0.025, 0.179), vec(side * 0.119, 0.24, 0.179),
-        vec(side * 0.147, 0.41, 0.224), vec(side * 0.18, 0.576, 0.240)], 0.008, gold);
+      tube(parent, [vec(side * 0.086, 0.025, 0.220), vec(side * 0.119, 0.24, 0.191),
+        vec(side * 0.147, 0.41, 0.208), vec(side * 0.17, 0.566, 0.237)], 0.008, gold);
       for (let i = 0; i < 5; i++) {
         const y = 0.11 + i * 0.084;
-        tube(parent, [vec(side * 0.022, y - 0.013, 0.189 + i * 0.017), vec(side * 0.092, y, 0.182 + i * 0.017),
-          vec(side * 0.046, y + 0.030, 0.193 + i * 0.017)], 0.0043, bright, 4, 8);
+        const radius = 0.246 + 0.073 * ease((y - 0.22) / 0.35) + 0.048 * ease((0.16 - y) / 0.26);
+        const z = radius * 0.80;
+        tube(parent, [vec(side * 0.014, y - 0.012, z + 0.006), vec(side * 0.093, y, z - 0.001),
+          vec(side * 0.126, y + 0.022, z - 0.004)], 0.0045, bright, 5, 9);
       }
     }
   } else {
     lathe(parent, [[-0.17, 0.33], [0.04, 0.339], [0.22, 0.298], [0.44, 0.362], [0.65, 0.407],
       [0.76, 0.351], [0.83, 0.19], [0.88, 0.151]], fabric, 0, 0, 0, 1.16, 0.66);
-    lathe(parent, [[0.82, 0.173], [0.92, 0.174], [1.002, 0.152], [1.019, 0.157]], dark, 0, 0, 0.012, 1.01, 0.90);
-    lathe(parent, [[0.992, 0.153], [1.018, 0.157], [1.026, 0.155]], linen, 0, 0, 0.012, 1.02, 0.89);
+    lathe(parent, [[0.80, 0.184], [0.85, 0.164], [0.98, 0.158], [1.012, 0.161], [1.027, 0.155]], dark, 0, 0, 0.012, 1.01, 0.99);
+    lathe(parent, [[0.966, 0.162], [1.008, 0.166], [1.029, 0.15]], linen, 0, 0, 0.013, 1.02, 1.03);
     for (const side of [-1, 1]) {
-      tube(parent, [vec(side * 0.160, 0.967, 0.062), vec(side * 0.116, 0.892, 0.140),
-        vec(side * 0.067, 0.795, 0.193), vec(side * 0.026, 0.715, 0.244)], 0.013, linen, 6);
-      tube(parent, [vec(side * 0.179, 0.916, 0.059), vec(side * 0.137, 0.842, 0.136),
-        vec(side * 0.081, 0.751, 0.223)], 0.008, gold);
+      const collar = surface(16, 5, (u, v) => {
+        const width = Math.sin(Math.PI * u) * 0.053;
+        return [side * (mix(0.140, 0.027, u) + (v - 0.35) * width),
+          mix(0.993, 0.742, u) + v * width * 0.61, mix(0.122, 0.245, u) + 0.03 * Math.sin(Math.PI * u) + width * 0.17 * v];
+      });
+      const fold = linen.clone();
+      fold.side = T.DoubleSide;
+      mesh(parent, collar, fold);
     }
-    const clasp = oval(parent, gold, 0, 0.748, 0.233, 0.044, 0.033, 0.018);
-    clasp.rotation.z = Math.PI * 0.25;
-    oval(parent, panel, 0, 0.749, 0.249, 0.021, 0.014, 0.010);
+    oval(parent, bright, 0, 0.767, 0.257, 0.039, 0.028, 0.015);
+    oval(parent, panel, 0, 0.768, 0.269, 0.018, 0.014, 0.009);
     for (const side of [-1, 1]) {
       tube(parent, [vec(side * 0.203, -0.152, 0.191), vec(side * 0.179, 0.205, 0.169),
         vec(side * 0.250, 0.472, 0.197), vec(side * 0.285, 0.625, 0.228),
@@ -150,7 +173,7 @@ function makeSkirt(parent, mats) {
   }
   geo.setAttribute('color', new T.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
-  mesh(skirt, geo, cloth('#ffffff', { vertexColors: true, side: T.DoubleSide }));
+  mesh(skirt, geo, cloth('#ffffff', { map: mats.fabric.map, vertexColors: true, side: T.DoubleSide }));
   for (const [y, r] of [[-1.48, 0.635], [-1.39, 0.609]]) {
     const points = Array.from({ length: 65 }, (_, i) => {
       const a = i * Math.PI / 32;
@@ -196,13 +219,23 @@ function makeArm(parent, female, side, mats) {
   const chain = limb(parent, female ? 0.565 : 0.63, female ? 0.515 : 0.55);
   const { upper, lower, end, upperLength: a, lowerLength: b } = chain;
   const { bright, dark, gold, linen, panel, skin, sleeve } = mats;
-  lathe(upper, [[-a - 0.05, 0.077], [-a + 0.06, 0.118], [-a * 0.56, 0.143], [-a * 0.25, female ? 0.206 : 0.183],
-    [0.035, 0.166], [0.102, 0.087], [0.119, 0.012]], sleeve, 0, 0, 0, 1, 0.91);
-  for (const offset of [-0.105, 0, 0.105]) {
-    tube(upper, [vec(offset * 0.6, 0.074, 0.096), vec(offset, -0.077, 0.156),
-      vec(offset * 0.88, -0.218, 0.142), vec(offset * 0.62, -0.388, 0.102)], offset === 0 ? 0.014 : 0.009, offset === 0 ? panel : gold);
+  const upperProfile = new T.SplineCurve([
+    [-a - 0.064, 0.068], [-a + 0.035, 0.114], [-a * 0.59, 0.144], [-a * 0.24, female ? 0.208 : 0.178],
+    [0.025, 0.164], [0.089, 0.114], [0.135, 0.053], [0.148, 0.004],
+  ].map(([y, r]) => new T.Vector2(r, y)));
+  const points = upperProfile.getPoints(22).map(point => [point.y, point.x]);
+  lathe(upper, points, sleeve, 0, 0, 0, 1, 0.91, 20);
+  for (const angle of [-0.61, 0.13, 0.77]) {
+    const piping = Array.from({ length: 15 }, (_, i) => {
+      const point = upperProfile.getPoint(mix(0.19, 0.82, i / 14));
+      const theta = angle + Math.sin(i / 14 * Math.PI) * 0.09 * side;
+      return vec(Math.sin(theta) * (point.x + 0.004), point.y, Math.cos(theta) * (point.x + 0.004) * 0.91);
+    });
+    tube(upper, piping, angle === 0.13 ? 0.005 : 0.0067, angle === 0.13 ? panel : gold, 5, 19);
   }
-  lathe(lower, [[-b - 0.018, 0.064], [-b + 0.10, 0.080], [-b * 0.49, 0.099], [-0.022, 0.127], [0.073, 0.102], [0.105, 0.04]], sleeve, 0, 0, 0, 1, 0.91);
+  oval(lower, sleeve, 0, 0.007, 0, 0.110, 0.108, 0.099);
+  lathe(lower, [[-b - 0.018, 0.064], [-b + 0.10, 0.080], [-b * 0.49, 0.099], [-0.065, 0.110], [0.024, 0.102],
+    [0.083, 0.075], [0.100, 0.031]], sleeve, 0, 0, 0, 1, 0.91);
   lathe(lower, [[-b - 0.012, 0.067], [-b + 0.080, 0.082], [-b + 0.09, 0.08]], dark, 0, 0, 0, 1, 0.91);
   lathe(lower, [[-b - 0.026, 0.068], [-b + 0.004, 0.076]], linen, 0, 0, 0, 1, 0.91);
   lathe(lower, [[-b + 0.062, 0.082], [-b + 0.078, 0.084]], bright, 0, 0, 0, 1, 0.91);
@@ -261,7 +294,7 @@ function pulse(progress, action, offset) {
 
 function gestureHand(action, side, forearm) {
   switch (action) {
-    case 'reach': return [vec(side * 0.31, 0.24, 1), vec(-side * 0.22, 1, 0.06)];
+    case 'reach': return [vec(side * 0.36, 0.42, 1), vec(-side * 0.37, 1, 0.17)];
     case 'point': return [forearm, vec(-side, 0.16, 0.28)];
     case 'clutch_heart': return [vec(-side * 0.87, 0.46, -0.12), vec(0, 0, -1)];
     case 'hands_on_head': return [vec(-side * 0.46, 0.82, -0.21), vec(-side, 0, -0.18)];
@@ -292,7 +325,7 @@ export class Actor {
     const female = index === 1;
     this.female = female;
     const palette = PALETTES[index];
-    const weave = wovenPattern(female ? 3.6 : 4.2);
+    const weave = wovenPattern(female ? 2.7 : 3.1);
     const mats = {
       skin: material(palette.skin), fabric: cloth(palette.fabric, { map: weave }), panel: cloth(palette.panel),
       sleeve: cloth(palette.sleeve, { map: weave }), linen: cloth(palette.linen), dark: cloth(palette.shadow), boot: cloth(palette.boot),
@@ -302,7 +335,7 @@ export class Actor {
     this.root = group(parent);
     this.hip = group(this.root, 0, 1.70, 0);
     this.chest = group(this.hip);
-    this.head = group(this.chest, 0, 1.185, 0.035);
+    this.head = group(this.chest, 0, female ? 1.205 : 1.236, 0.035);
     oval(this.chest, mats.skin, 0, 0.891, 0.011, female ? 0.138 : 0.154, 0.243, 0.133);
     decorate(this.chest, female, mats);
     this.face = makeFace(this.head, palette, female);
@@ -313,13 +346,13 @@ export class Actor {
     this.orbitDirection = female ? -1 : 1;
   }
 
-  pose({ time, expression: e, mouth = MOUTH.rest, speaking, listening, progress, actions, portrait, focus, delivery, reaction }) {
+  pose({ time, expression: e, mouth = MOUTH.rest, speaking, listening, progress, actions, portrait, focus, delivery, reaction, pickup, rail }) {
     const side = this.orbitDirection;
     const seed = this.index * 1.62;
     const breath = Math.sin(time * 2.46 + seed);
     const weightShift = Math.sin(time * 1.43 + seed) * 0.024;
     const react = listening ? reaction : 0;
-    const nod = react * 0.12 + (actions.includes('nod') ? pulse(progress, 'nod', 0) * Math.sin(progress * Math.PI * 8) * 0.23 : 0);
+    const nod = react * 0.142 - pickup * 0.060 + (actions.includes('nod') ? pulse(progress, 'nod', 0) * Math.sin(progress * Math.PI * 8) * 0.23 : 0);
     const kneel = actions.includes('kneel') ? pulse(progress, 'kneel', 0) : 0;
     const step = actions.includes('step_forward') ? pulse(progress, 'step_forward', 0) : 0;
     const turn = actions.includes('turn_away') ? pulse(progress, 'turn_away', 0.10) : 0;
@@ -327,29 +360,31 @@ export class Actor {
     const reach = actions.includes('reach') ? pulse(progress, 'reach', 0) : 0;
     const attention = portrait ? 0 : focus * (1 - turn * 0.88);
     const partnerYaw = Math.atan2(side * 2.68, this.index === 0 ? -0.52 : 0.52);
-    const bodyYaw = portrait ? side * 0.08 : side * (0.41 + attention * 0.26 - turn * 1.42);
+    const bodyYaw = portrait ? side * 0.08 : side * (0.48 - turn * 1.42);
     this.root.position.copy(this.base);
     this.root.rotation.y = bodyYaw;
-    this.hip.position.set(weightShift + side * (step * 0.11 + reach * 0.035), 1.67 + breath * 0.011 + e.lift * 0.31 - kneel * 0.86,
+    this.hip.position.set(weightShift + side * (step * 0.12 + reach * 0.05 + react * 0.07 - (rail ? 0.041 : 0)),
+      1.67 + breath * 0.011 + e.lift * 0.29 - kneel * 0.86 + 0.023 * pickup,
       step * 0.37 + kneel * 0.045 - recoil * 0.18);
-    this.chest.rotation.set(e.lean * 0.62 + kneel * 0.19 - recoil * 0.19 + reach * 0.061 + breath * 0.014 + delivery * 0.032,
-      side * (0.008 + react * 0.05 + reach * 0.075), -weightShift * 0.80 - side * reach * 0.038);
+    this.chest.rotation.set(e.lean * 0.62 + kneel * 0.19 - recoil * 0.19 + reach * 0.082 + breath * 0.014 + delivery * 0.05 + react * 0.05 - pickup * 0.04,
+      side * (0.015 + attention * 0.15 + react * 0.079 + reach * 0.075),
+      -weightShift * 0.80 - side * (reach * 0.063 + react * 0.054));
     this.chest.scale.set(1 + breath * 0.008, 1 + breath * 0.008, 1 + breath * 0.016 + Math.max(0, delivery) * 0.015);
     const lookTime = (time + seed) * 0.71;
     const look = Math.floor(lookTime);
     const drift = listening ? 0.16 : 0.28;
     const glance = index => Math.sin(index * 3.84 + seed) * drift;
     const saccade = mix(glance(look - 1), glance(look), ease((lookTime - look) * 13));
-    const headYaw = clamp((partnerYaw - bodyYaw) * attention * 0.49, -0.50, 0.50);
-    const partnerPitch = (this.index === 0 ? -0.14 : 0.16) * attention;
+    const headYaw = clamp((partnerYaw - bodyYaw - this.chest.rotation.y) * attention * 0.57, -0.53, 0.53);
+    const partnerPitch = (this.index === 0 ? -0.20 : 0.24) * attention;
     const tilt = e.roll + breath * 0.017 - side * react * 0.035;
     this.head.rotation.set(e.pitch + nod + partnerPitch - delivery * 0.061,
       portrait ? side * 0.045 : headYaw - side * (0.135 + 0.12 * turn) + saccade * 0.13, tilt);
     const micro = Math.max(0, Math.sin(time * 4.73 + seed)) ** 9 * (speaking ? 0.10 : 0.055);
     const face = { ...e, inner: e.inner + micro + react * 0.12 + delivery * 0.03, asym: e.asym + micro,
       squint: e.squint + react * 0.09 + delivery * 0.045 };
-    const eyesX = portrait ? -side * 0.13 : side * attention * 0.80 + saccade;
-    const eyesY = e.gazeY + micro - partnerPitch * 2.20 + react * 0.043;
+    const eyesX = portrait ? -side * 0.065 : side * (attention * 0.91 + react * 0.09) + saccade;
+    const eyesY = e.gazeY + micro - partnerPitch * 2.70 + react * 0.075 + pickup * 0.06;
     this.face(face, mouth, eyeBlink(time, 0.43 + seed), clamp(eyesX, -0.87, 0.87), eyesY);
 
     for (const arm of this.arms) {
@@ -381,7 +416,23 @@ export class Actor {
           handBlend = emphasis;
         }
       }
-      if (speaking) wrist.y += (0.014 + reach * 0.04) * delivery;
+      if (speaking) {
+        wrist.y += (0.022 + reach * 0.086) * delivery;
+        wrist.z += reach * delivery * 0.085;
+        if (gesture === 'reach') {
+          const unfurl = ease((progress - 0.12) / 0.36);
+          wrist.y -= handBlend * (1 - unfurl) * 0.105;
+          grip = mix(grip, 0.51, handBlend * (1 - unfurl));
+        }
+      }
+      let touch = 0;
+      if (rail && armSide === 1) {
+        // Juliet's free hand travels to the front newel in world space.
+        touch = (listening ? 0.74 + react * 0.26 : 0.72) * (1 - clamp(handBlend + turn + kneel + recoil));
+        const newel = this.chest.worldToLocal(vec(1.85, 1.57, 0.35));
+        wrist.lerp(newel, touch);
+        grip = mix(grip, 0.52 + pickup * 0.17, touch);
+      }
       const shoulder = arm.shoulder.clone();
       shoulder.y += e.guard * 0.068 + react * 0.030 + (armSide === leadSide ? reach * 0.038 : 0);
       shoulder.z += (armSide === leadSide ? reach * 0.056 : 0);
@@ -392,6 +443,7 @@ export class Actor {
       const forearm = DOWN.clone().applyQuaternion(arm.lower.quaternion);
       const hand = gestureHand(gesture, armSide, forearm);
       if (hand) arm.end.quaternion.slerp(handRotation(...hand), clamp(handBlend) * 0.93);
+      if (touch > 0) arm.end.quaternion.slerp(handRotation(vec(0.04, -0.58, 0.74), vec(0, -1, -0.63)), touch * 0.89);
       for (const [i, digit] of arm.fingers.entries()) {
         const bend = i === 0 ? mix(grip, 0.01, pointing) : mix(grip, 0.95, pointing);
         digit.finger.rotation.x = -bend * 0.92;

@@ -96,21 +96,21 @@ function shape(female) {
   const depth = female ? 0.317 : 0.328;
   const section = y => {
     const taper = clamp((-y - 0.08) / 0.40);
-    const temple = gaussian(y - 0.18, 0.16);
-    return width * (1 - taper * (female ? 0.25 : 0.16) - temple * 0.055) + 0.014 * gaussian(y + 0.055, 0.10);
+    const temple = gaussian(y - 0.19, 0.13);
+    return width * (1 - taper * (female ? 0.27 : 0.10) - temple * 0.069) + 0.015 * gaussian(y + 0.067, 0.096);
   };
   function relief(x, y) {
     const abs = Math.abs(x);
     const bridge = (female ? 0.047 : 0.075) * gaussian(y - 0.026, 0.143) * gaussian(x, 0.046);
     const tip = (female ? 0.085 : 0.099) * gaussian(y + 0.072, 0.058) * gaussian(x, female ? 0.065 : 0.066);
     const alae = 0.022 * gaussian(abs - 0.055, 0.039) * gaussian(y + 0.098, 0.046);
-    const sockets = 0.038 * gaussian(abs - 0.153, 0.097) * gaussian(y - 0.069, 0.071);
-    const cheeks = (female ? 0.032 : 0.035) * gaussian(abs - 0.214, 0.092) * gaussian(y + 0.053, 0.113);
+    const sockets = (female ? 0.033 : 0.044) * gaussian(abs - 0.153, 0.097) * gaussian(y - 0.069, 0.071);
+    const cheeks = (female ? 0.036 : 0.045) * gaussian(abs - 0.214, 0.092) * gaussian(y + 0.053, 0.113);
     const brow = (female ? 0.016 : 0.027) * gaussian(abs - 0.10, 0.14) * gaussian(y - 0.153, 0.048);
     const philtrum = -0.008 * gaussian(x, 0.016) * gaussian(y + 0.168, 0.035);
     const muzzle = 0.037 * gaussian(x, 0.131) * gaussian(y + 0.213, 0.083);
-    const chin = (female ? 0.043 : 0.060) * gaussian(x, female ? 0.119 : 0.158) * gaussian(y + 0.368, 0.084);
-    const jaw = (female ? 0.007 : 0.025) * gaussian(abs - 0.211, 0.077) * gaussian(y + 0.276, 0.105);
+    const chin = (female ? 0.035 : 0.054) * gaussian(x, female ? 0.119 : 0.158) * gaussian(y + 0.368, 0.084);
+    const jaw = (female ? 0.006 : 0.044) * gaussian(abs - 0.211, 0.077) * gaussian(y + 0.276, 0.105);
     return bridge + tip + alae + cheeks + brow + philtrum + muzzle + chin + jaw - sockets;
   }
   function front(x, y) {
@@ -146,10 +146,13 @@ function makeSculpt(parent, anatomy, palette, female) {
     const cheek = gaussian(Math.abs(x) - 0.219, 0.092) * gaussian(y + 0.070, 0.081);
     const eye = gaussian(Math.abs(x) - 0.153, 0.108) * gaussian(y - 0.055, 0.093);
     const chin = gaussian(y + 0.345, 0.102) * gaussian(x, 0.235);
-    const grain = Math.sin(x * 188 + y * 139) * Math.sin(y * 283 - z * 133);
+    const grain = Math.sin(x * 74 + y * 51) * Math.sin(y * 123 - z * 74);
+    const freckles = Math.max(0, Math.sin(x * 322 + y * 223) * Math.sin(y * 488 - x * 104)) ** 9;
+    const sun = gaussian(y + 0.034, 0.095) * gaussian(x, 0.244);
     vertexColor.copy(base).lerp(blush, frontness * ((female ? 0.55 : 0.42) * cheek + 0.19 * gaussian(x, 0.081) * gaussian(y + 0.089, 0.062)));
     vertexColor.lerp(shade, frontness * (0.31 * eye + (female ? 0.10 : 0.21) * chin));
-    vertexColor.multiplyScalar(1 + 0.022 * grain);
+    vertexColor.lerp(shade, freckles * sun * frontness * (female ? 0.29 : 0.17));
+    vertexColor.multiplyScalar(1 + 0.023 * grain);
     vertexColor.toArray(colors, i * 3);
     const drop = frontness * jawWeight(y);
     jaw[i * 3 + 1] = -0.074 * drop;
@@ -165,7 +168,7 @@ function makeSculpt(parent, anatomy, palette, female) {
   geometry.morphTargetsRelative = true;
   geometry.morphAttributes.position = [new T.BufferAttribute(jaw, 3), new T.BufferAttribute(sneer, 3), new T.BufferAttribute(cheekLift, 3)];
   geometry.computeVertexNormals();
-  return mesh(parent, geometry, material('#ffffff', { vertexColors: true, roughness: 0.78 }));
+  return mesh(parent, geometry, material('#ffffff', { vertexColors: true, roughness: 0.87 }));
 }
 
 function easeFront(oz) {
@@ -198,11 +201,11 @@ function irisTexture(inner, outer) {
   ctx.beginPath();
   ctx.arc(64, 64, 20, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#fff1de';
+  ctx.fillStyle = '#fff1dacc';
   ctx.beginPath();
-  ctx.ellipse(49, 46, 7, 4, -0.4, 0, Math.PI * 2);
+  ctx.ellipse(53, 48, 4.0, 2.5, -0.4, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#d6e6ff85';
+  ctx.fillStyle = '#d6e6ff43';
   ctx.beginPath();
   ctx.arc(75, 78, 3, 0, Math.PI * 2);
   ctx.fill();
@@ -258,15 +261,15 @@ function makeEye(parent, anatomy, palette, female, side, irisMat, browMap) {
   const front = anatomy.front;
   const both = { side: T.DoubleSide };
   const white = shadedPatch(parent, 22, 6, (s, t) => {
-    const shade = Math.max(0, (t - 0.50) * 1.33) + 0.74 * Math.abs(s * 2 - 1) ** 5;
-    return [new T.Color('#e8ded2').lerp(new T.Color('#a87d77'), clamp(shade)), 1];
+    const shade = 0.52 * t ** 3 + 0.69 * Math.abs(s * 2 - 1) ** 3 + (1 - t) ** 5 * 0.21;
+    return [new T.Color('#d6ccc0').lerp(new T.Color('#92716e'), clamp(shade)), 1];
   }, { roughness: 0.7 });
   const iris = patch(parent, irisMat, 22, 6);
   const feather = { transparent: true, depthWrite: false, forceSinglePass: true };
   const lid = (upper) => shadedPatch(parent, 22, 6, (s, t) => {
     const edge = new T.Color(upper ? palette.lid : palette.lower);
     const color = new T.Color(palette.skin).lerp(edge, (1 - t) ** 0.63);
-    const opacity = (1 - easeEdge(t, 0.59)) * (1 - Math.abs(s * 2 - 1) ** 8);
+    const opacity = (1 - easeEdge(t, 0.44)) * (1 - Math.abs(s * 2 - 1) ** 8);
     return [color, opacity];
   }, { ...feather, roughness: 0.78 });
   const upper = lid(true);
@@ -279,9 +282,9 @@ function makeEye(parent, anatomy, palette, female, side, irisMat, browMap) {
     const asym = side > 0 ? expression.asym : 0;
     const snarl = expression.sneer * (side === 1 ? 1 : 0.20);
     const squint = expression.squint + asym * 0.23;
-    const open = Math.max(0.14, 1 + expression.eye * 0.61 - squint * 0.35);
+    const open = Math.max(0.14, 1 + expression.eye * 0.52 - squint * 0.43);
     const top = 0.040 * open * (1 - 0.98 * blink) * (female ? 1.10 : 1);
-    const bottom = 0.023 * open * (1 - 0.98 * blink) * (1 - squint * 0.56);
+    const bottom = 0.019 * (0.93 + (open - 0.93) * 0.68) * (1 - 0.98 * blink) * (1 - squint * 0.75);
     const line = u => u * side * (female ? 0.010 : 0.004) - 0.019 * blink + 0.007 * snarl + 0.007 * squint;
     const arc = u => Math.max(0, 1 - u * u) ** 0.78;
     const coordinates = (u, y, bulge, extra = 0) => {
@@ -289,7 +292,7 @@ function makeEye(parent, anatomy, palette, female, side, irisMat, browMap) {
       const yy = cy + y;
       return [x, yy, front(x, yy) + 0.002 + bulge + extra];
     };
-    const dome = (u, y) => arc(u) * Math.max(0, 1 - Math.abs(y - line(u)) * 6.1) * 0.018;
+    const dome = (u, y) => arc(u) * Math.max(0, 1 - Math.abs(y - line(u)) * 6.1) * 0.012;
     const high = u => line(u) + top * arc(u) * (1 - u * side * 0.17);
     const low = u => line(u) - bottom * arc(u) * (1 + u * side * 0.12);
     white((s, t) => {
@@ -297,9 +300,9 @@ function makeEye(parent, anatomy, palette, female, side, irisMat, browMap) {
       const y = mix(low(u), high(u), t);
       return coordinates(u, y, dome(u, y));
     });
-    const rr = (female ? 0.042 : 0.038) * (1 - clamp(expression.eye) * 0.068);
-    const dx = gazeX * 0.049;
-    const dy = gazeY * 0.032 + 0.007;
+    const rr = (female ? 0.042 : 0.040) * (1 - clamp(expression.eye) * 0.041);
+    const dx = gazeX * 0.041 - side * 0.0035;
+    const dy = gazeY * 0.027 + 0.008;
     iris((s, t) => {
       const ix = s * 2 - 1;
       const u = (dx + ix * rr) / half;
@@ -312,8 +315,8 @@ function makeEye(parent, anatomy, palette, female, side, irisMat, browMap) {
       const edge = isUpper ? high(u) : low(u);
       const distance = isUpper ? 0.041 + blink * 0.066 : -0.034 - squint * 0.010;
       const y = edge + (distance * t - (isUpper ? 0.0018 : -0.0016)) * arc(u);
-      const fold = Math.sin(Math.PI * t) * (isUpper ? 0.010 : 0.006) * arc(u);
-      return coordinates(u, y, (dome(u, edge) + 0.004) * (1 - t) + fold);
+      const fold = Math.sin(Math.PI * t) * (isUpper ? 0.008 : 0.0035) * arc(u);
+      return coordinates(u, y, (dome(u, edge) + 0.0025) * (1 - t) + fold);
     };
     upper((s, t) => drawLid(s, t, true));
     lower((s, t) => drawLid(s, t, false));
@@ -327,7 +330,7 @@ function makeEye(parent, anatomy, palette, female, side, irisMat, browMap) {
       const outward = s;
       const pull = expression.knit * (1 - outward);
       const x = cx + u * 0.106 - side * pull * 0.016;
-      const center = cy + 0.093 + 0.029 * Math.sin(outward * Math.PI * 0.96) +
+      const center = cy + 0.089 + 0.029 * Math.sin(outward * Math.PI * 0.96) +
         (1 - outward) * (expression.inner * 0.059 - expression.knit * 0.043) +
         outward * (expression.outer * 0.044 + asym * 0.053) + snarl * 0.008;
       const thickness = (female ? 0.017 : 0.027) * Math.sin(outward * Math.PI) ** 0.39 * (1.30 - outward * 0.68);
@@ -345,11 +348,11 @@ function easeEdge(value, start) {
 function makeMouth(parent, anatomy, palette, female) {
   const both = { side: T.DoubleSide };
   const cavity = shadedPatch(parent, 28, 7, (s, t) => [
-    new T.Color('#2f1418').lerp(new T.Color('#09070c'), Math.sin(t * Math.PI) ** 0.6), 1,
+    new T.Color('#563032').lerp(new T.Color('#21141a'), Math.sin(t * Math.PI) ** 0.6), 1,
   ], { roughness: 0.94 });
   const teeth = shadedPatch(parent, 40, 5, (s, t) => {
     const seam = Math.abs(Math.sin(s * Math.PI * 8)) ** 18;
-    const tint = new T.Color('#e7d4bc').lerp(new T.Color('#935b50'), 0.28 * seam + 0.16 * (1 - t));
+    const tint = new T.Color('#ccb197').lerp(new T.Color('#855d56'), 0.28 * seam + 0.28 * (1 - t));
     return [tint, 1];
   }, { roughness: 0.68 });
   const tongue = patch(parent, material('#90454a', { ...both, roughness: 0.65 }), 20, 4);
@@ -358,12 +361,12 @@ function makeMouth(parent, anatomy, palette, female) {
     const edge = new T.Color(t < 0.40 ? '#763a35' : palette.skin);
     const color = pigment.lerp(edge, t < 0.40 ? (1 - t / 0.40) * 0.51 : (t - 0.40) * 0.58);
     return [color, (1 - easeEdge(t, 0.66)) * (1 - Math.abs(s * 2 - 1) ** 10)];
-  }, { transparent: true, depthWrite: false, forceSinglePass: true, roughness: 0.68 });
+  }, { transparent: true, depthWrite: false, forceSinglePass: true, roughness: 0.79 });
   const upper = lip(true);
   const lower = lip(false);
   return (e, m) => {
     const [jaw, spread, articulation, seal, showTeeth] = m;
-    const drop = clamp((e.open * 0.56 + jaw * 0.85) * (1 - seal * 0.995), 0, 1.03);
+    const drop = clamp((e.open * 0.52 + jaw * 0.72) * (1 - seal * 0.995), 0, 1.03);
     const round = clamp(articulation + e.round);
     const width = (female ? 0.116 : 0.127) * (1 + spread * 0.27 - round * 0.47 + e.smile * 0.17 + e.stretch * 0.27);
     const center = -0.206 - drop * 0.018;
@@ -379,19 +382,19 @@ function makeMouth(parent, anatomy, palette, female) {
       const behind = jawWeight(y) * drop;
       return [x, y - 0.074 * behind + 0.021 * cheek + 0.024 * snarl,
         anatomy.front(x, y) - 0.021 * behind + 0.012 * cheek + 0.013 * snarl +
-        0.0028 + ((0.014 + round * 0.039) * arc(u) + ridge) * arc(u)];
+        0.0048 + ((0.008 + round * 0.029) * arc(u) + ridge) * arc(u)];
     }
     cavity((s, t) => {
       const u = s * 2 - 1;
-      return p(u, mix(low(u), high(u), t), 0.001 - Math.sin(t * Math.PI) * 0.009);
+      return p(u, mix(low(u), high(u), t), 0.002 - Math.sin(t * Math.PI) * 0.0015);
     });
     teeth((s, t) => {
       const u = (s * 2 - 1) * 0.83;
       const taper = Math.sin(s * Math.PI) ** 0.46;
       const gap = high(u) - low(u);
-      const exposed = clamp((drop + e.sneer * 0.09 - 0.047) * 9) * (1 - seal);
-      const toothDrop = Math.min(gap * 0.63, (0.008 + showTeeth * 0.029 + e.smile * 0.014) * exposed);
-      return p(u, high(u) - exposed * 0.003 - toothDrop * t * taper, 0.0048);
+      const exposed = clamp((drop + e.sneer * 0.09 - 0.046) * 8) * (1 - seal);
+      const toothDrop = Math.min(gap * 0.53, (0.003 + showTeeth * 0.023 + e.smile * 0.016) * exposed);
+      return p(u, high(u) - toothDrop * t * taper, 0.0035);
     });
     tongue((s, t) => {
       const u = (s * 2 - 1) * 0.63;
@@ -412,53 +415,81 @@ function makeMouth(parent, anatomy, palette, female) {
   };
 }
 
+function hairGrain(vertical) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (vertical) {
+    ctx.rotate(Math.PI / 2);
+    ctx.translate(0, -256);
+  }
+  ctx.fillStyle = '#e9e6e0';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 152; i++) {
+    const y = i * 1.7;
+    const wave = Math.sin(i * 15.9);
+    ctx.strokeStyle = i % 4 ? '#34252636' : '#ffffff99';
+    ctx.lineWidth = i % 7 ? 0.62 : 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(73, y + 1.3 * wave, 166, y + 1.4 * wave, 256, y);
+    ctx.stroke();
+  }
+  const texture = new T.CanvasTexture(canvas);
+  texture.colorSpace = T.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
 function makeHair(parent, anatomy, palette, female) {
-  const hair = material('#ffffff', { roughness: 0.69, side: T.DoubleSide, vertexColors: true });
+  const hair = material('#ffffff', { roughness: 0.56, side: T.DoubleSide, vertexColors: true, map: hairGrain(false) });
+  const scalp = hair.clone();
+  scalp.map = hairGrain(true);
   const dark = new T.Color(palette.hair);
   const highlights = palette.locks.map(tint => new T.Color(tint));
-  const stroke = material(palette.thread, { roughness: 0.73 });
-  function sculptHair(columns, rows, sample, tint) {
+  function sculptHair(columns, rows, sample, tint, mat = hair) {
     const geometry = surface(columns, rows, sample);
     const color = new T.Color();
     const uv = geometry.attributes.uv;
     const colors = new Float32Array(uv.count * 3);
     for (let i = 0; i < uv.count; i++) {
       const u = uv.getX(i), v = uv.getY(i);
-      const strands = Math.sin(v * 91 + Math.sin(u * 7) * 0.91) * 0.19 + Math.cos(v * 213 + u * 0.85) * 0.10;
+      const strands = Math.sin(v * 84 + Math.sin(u * 7) * 0.91) * 0.13 + Math.cos(v * 109 + u * 0.85) * 0.08;
       color.copy(dark).lerp(tint, clamp(0.57 + strands + Math.sin(u * 5 + v * 9) * 0.13));
       color.toArray(colors, i * 3);
     }
     geometry.setAttribute('color', new T.BufferAttribute(colors, 3));
-    mesh(parent, geometry, hair);
+    mesh(parent, geometry, mat);
   }
   function cap(v, u) {
     const azimuth = Math.PI * 2 * v;
     const frontal = Math.max(0, Math.cos(azimuth));
-    const edge = mix(female ? 1.93 : 1.80, female ? 1.077 : 1.085, frontal ** 0.39) +
-      (female ? 0.036 * Math.cos(azimuth * 5) : 0.091 * Math.sin(azimuth - 0.23)) * frontal;
+    const edge = mix(female ? 1.91 : 1.83, female ? 0.967 : 1.050, frontal ** 0.39) +
+      (female ? -0.104 * Math.cos(azimuth * 5 + 0.08) : 0.11 * Math.sin(azimuth - 0.44)) * frontal +
+      0.005 * Math.sin(azimuth * 37);
     const phi = u * edge;
     const angle = azimuth + (female ? 0.20 : 0.61) * (1 - u) ** 1.7;
-    const comb = Math.sin(azimuth * 25 + Math.sin(u * Math.PI) * 0.57);
+    const comb = Math.sin(azimuth * 34 + Math.sin(u * Math.PI) * 0.91);
     const wave = 1 + (0.018 * Math.sin(azimuth * 8 + phi * 4) + comb * 0.0055) * Math.sin(u * Math.PI * 0.77);
     const x = anatomy.width * 1.09 * Math.sin(phi) * Math.sin(angle) * wave;
     const y = 0.034 + anatomy.radius * (female ? 1.09 : 1.10) * Math.cos(phi) * wave;
     const z = (anatomy.depth + 0.061) * Math.sin(phi) * Math.cos(angle) * wave - 0.012;
     const nape = (1 - frontal) * (0.39 + 0.61 * Math.max(0, -Math.cos(azimuth)));
-    const hairline = easeEdge(u, 0.72) * frontal ** 0.5;
-    return vec(x, y - nape * u * 0.041, mix(z, anatomy.front(x, y) + 0.012 + comb * 0.002, hairline));
+    const hairline = easeEdge(u, 0.78) * frontal ** 0.64;
+    return vec(x, y - nape * u * 0.041, mix(z, anatomy.front(x, y) + 0.006 + comb * 0.001, hairline));
   }
-  sculptHair(22, 96, (u, v) => cap(v, u).toArray(), highlights[0]);
+  sculptHair(27, 112, (u, v) => cap(v, u).toArray(), highlights[2], scalp);
 
   function lock(points, width, thickness, index, curl = 0) {
     const curve = new T.CatmullRomCurve3(points);
-    sculptHair(18, 16, (u, v) => {
+    sculptHair(22, 12, (u, v) => {
       const point = curve.getPoint(u);
       const tangent = curve.getTangent(u);
       const wide = new T.Vector3().crossVectors(tangent, vec(0, 0, 1)).normalize();
       const out = new T.Vector3().crossVectors(wide, tangent).normalize();
       const angle = v * Math.PI * 2 + curl * u;
       const taper = Math.sin(Math.PI * (0.09 + u * 0.91)) ** 0.62;
-      const comb = 1 + Math.cos(v * Math.PI * 12 + u * 2.5) * 0.062;
+      const comb = 1 + Math.cos(v * Math.PI * 8 + u * 2.5) * 0.093;
       return point.addScaledVector(wide, Math.cos(angle) * width * taper * comb)
         .addScaledVector(out, Math.sin(angle) * thickness * taper * comb).toArray();
     }, highlights[index % highlights.length]);
@@ -474,14 +505,16 @@ function makeHair(parent, anatomy, palette, female) {
     }
     for (const side of [-1, 1]) {
       for (let i = 0; i < 4; i++) {
-        lock([vec(0.043 + side * i * 0.013, 0.493 + i * 0.010, 0.157 - i * 0.067),
-          vec(side * (0.137 + i * 0.023), 0.461 - i * 0.005, 0.235 - i * 0.051),
-          vec(side * (0.245 + i * 0.019), 0.335 - i * 0.018, 0.240 - i * 0.062),
-          vec(side * (0.333 + i * 0.002), 0.138 - i * 0.011, 0.131 - i * 0.064)], 0.054, 0.023, i, side * 0.40);
+        lock([vec(0.013 + side * i * 0.013, 0.485 + i * 0.010, 0.197 - i * 0.067),
+          vec(side * (0.124 + i * 0.020), 0.449 - i * 0.005, 0.277 - i * 0.053),
+          vec(side * (0.238 + i * 0.019), 0.34 - i * 0.018, 0.268 - i * 0.062),
+          vec(side * (0.333 + i * 0.002), 0.138 - i * 0.011, 0.131 - i * 0.064)], 0.048, 0.020, i, side * 0.61);
       }
       lock([vec(side * 0.283, 0.327, 0.171), vec(side * 0.348, 0.167, 0.159),
         vec(side * 0.339, -0.050, 0.154), vec(side * 0.300, -0.194, 0.164),
-        vec(side * 0.317, -0.266, 0.106)], 0.034, 0.025, 1, side * 0.68);
+        vec(side * 0.317, -0.266, 0.106)], 0.031, 0.025, 1, side * 0.68);
+      lock([vec(side * 0.297, 0.267, 0.182), vec(side * 0.353, 0.117, 0.175),
+        vec(side * 0.345, -0.050, 0.155), vec(side * 0.298, -0.176, 0.196)], 0.016, 0.016, 2, side * 1.2);
       const gold = material('#9e713d', { roughness: 0.43, metalness: 0.27 });
       const pearl = material('#dcbb96', { roughness: 0.38 });
       const comb = [vec(side * 0.181, 0.435, 0.272), vec(side * 0.243, 0.384, 0.273), vec(side * 0.296, 0.318, 0.245)];
@@ -489,21 +522,22 @@ function makeHair(parent, anatomy, palette, female) {
       for (const { x, y, z } of comb) oval(parent, pearl, x, y, z + 0.005, 0.012, 0.013, 0.010);
     }
   } else {
-    for (let i = 0; i < 6; i++) {
-      lock([vec(-0.295 + i * 0.008, 0.214 + i * 0.037, 0.164 - i * 0.046),
-        vec(-0.222 + i * 0.017, 0.419 + i * 0.018, 0.265 - i * 0.052),
-        vec(0.028 + i * 0.023, 0.486 + i * 0.009, 0.278 - i * 0.062),
-        vec(0.217 + i * 0.017, 0.400 + i * 0.012, 0.239 - i * 0.062),
-        vec(0.324, 0.244 + i * 0.022, 0.136 - i * 0.060)], 0.068, 0.028, i, 0.42);
+    for (let i = 0; i < 10; i++) {
+      const depth = i * 0.035;
+      const ripple = Math.sin(i * 1.7);
+      lock([vec(-0.30 + i * 0.010, 0.205 + i * 0.021, 0.187 - depth),
+        vec(-0.221 + i * 0.014, 0.397 + i * 0.013, 0.304 - depth),
+        vec(-0.012 + i * 0.018, 0.456 + i * 0.008 + ripple * 0.012, 0.355 - depth),
+        vec(0.179 + i * 0.009, 0.358 + i * 0.010, 0.302 - depth),
+        vec(0.311 + ripple * 0.013, 0.236 + i * 0.012, 0.159 - depth)], 0.039 + i * 0.002, 0.016 + i * 0.001, i, 0.67);
     }
-    lock([vec(-0.271, 0.335, 0.213), vec(-0.163, 0.439, 0.287),
-      vec(-0.005, 0.396, 0.351), vec(0.165, 0.293, 0.308)], 0.037, 0.021, 1, 0.6);
+    lock([vec(-0.275, 0.318, 0.232), vec(-0.170, 0.411, 0.327),
+      vec(-0.025, 0.396, 0.348), vec(0.161, 0.294, 0.318)], 0.024, 0.015, 1, 0.8);
     for (const side of [-1, 1]) {
       lock([vec(side * 0.298, 0.329, 0.161), vec(side * 0.362, 0.201, 0.088),
         vec(side * 0.355, 0.086, 0.045), vec(side * 0.332, -0.031, 0.061)], 0.033, 0.024, 0);
     }
-    tube(parent, [vec(-0.274, 0.328, 0.242), vec(-0.197, 0.415, 0.306), vec(-0.087, 0.417, 0.348),
-      vec(0.040, 0.362, 0.357), vec(0.143, 0.301, 0.326)], 0.0024, stroke, 4, 22);
+
   }
 }
 
@@ -512,7 +546,6 @@ export function makeFace(parent, palette, female) {
   const sculpt = makeSculpt(parent, anatomy, palette, female);
   const skin = material(palette.skin);
   const earInside = material(palette.lower);
-  const nostril = material(palette.nostril, { roughness: 0.89 });
   const nostrils = [];
   const gold = material('#bd9256', { metalness: 0.56, roughness: 0.32 });
   const pearl = material('#f8d3b4', { roughness: 0.24 });
@@ -521,14 +554,15 @@ export function makeFace(parent, palette, female) {
     ear.rotation.z = -side * 0.20;
     const well = oval(parent, earInside, side * (female ? 0.360 : 0.378), -0.043, 0.026, 0.019, 0.055, 0.018);
     well.rotation.z = ear.rotation.z;
-    const x = side * 0.044;
-    const y = -0.113;
-    const z = anatomy.front(x, y) + 0.001;
-    const nose = oval(parent, nostril, x, y, z, 0.013, 0.0036, 0.0043);
-    nose.rotation.z = side * 0.32;
-    nose.rotation.x = 0.37;
-    nose.frustumCulled = false;
-    nostrils.push({ nose, y, z, weight: noseWeight(x, y) });
+    const nose = shadedPatch(parent, 8, 5, (s, t) => [
+      palette.nostril, Math.sin(Math.PI * s) ** 1.3 * Math.sin(Math.PI * t) ** 1.2 * 0.68,
+    ], { transparent: true, depthWrite: false, forceSinglePass: true });
+    nostrils.push(sneer => nose((s, t) => {
+      const x = side * (0.033 + s * 0.037);
+      const y = -0.116 + 0.013 * (t - 0.5) + s * 0.009;
+      const wrinkle = noseWeight(x, y) * sneer;
+      return [x, y + 0.024 * wrinkle, anatomy.front(x, y) + 0.0018 + 0.013 * wrinkle];
+    }));
     if (female) {
       oval(parent, gold, side * 0.352, -0.144, 0.041, 0.024, 0.027, 0.02);
       oval(parent, gold, side * 0.352, -0.188, 0.046, 0.009, 0.039, 0.009);
@@ -546,9 +580,6 @@ export function makeFace(parent, palette, female) {
     sculpt.morphTargetInfluences[0] = jaw;
     sculpt.morphTargetInfluences[1] = expression.sneer;
     sculpt.morphTargetInfluences[2] = expression.smile;
-    for (const { nose, y, z, weight } of nostrils) {
-      nose.position.y = y + 0.024 * weight * expression.sneer;
-      nose.position.z = z + 0.013 * weight * expression.sneer;
-    }
+    for (const nose of nostrils) nose(expression.sneer);
   };
 }
