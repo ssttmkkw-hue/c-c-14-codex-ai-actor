@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101017" />
+    <meta name="description" content="一座可导戏的 3D 舞台。排练中文台词，调度表情、动作、镜头与灯光。" />
+    <title>Actor Studio · 舞台表演实验室</title>
+    <script type="module" crossorigin src="/c-c-14-codex-ai-actor/assets/index-DqCNxDCk.js"></script>
+    <link rel="modulepreload" crossorigin href="/c-c-14-codex-ai-actor/assets/mandarin-Dub8qpyf.js">
+    <link rel="modulepreload" crossorigin href="/c-c-14-codex-ai-actor/assets/three-core-DPZmsNjQ.js">
+    <link rel="modulepreload" crossorigin href="/c-c-14-codex-ai-actor/assets/three-renderer-BpYLlrJO.js">
+    <link rel="stylesheet" crossorigin href="/c-c-14-codex-ai-actor/assets/index-BSQAriMS.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="topbar">
+        <a class="brand" href="./" aria-label="Actor Studio 首页">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>ACTOR<span class="brand-accent">.</span>STUDIO</span>
+        </a>
+        <nav class="main-nav" aria-label="工作区">
+          <button type="button" data-tab="live" aria-controls="live-panel" aria-current="page">排练台</button>
+          <button type="button" data-tab="script" aria-controls="script-panel">剧本</button>
+          <button type="button" data-tab="gallery" aria-controls="gallery-panel">表情图谱</button>
+        </nav>
+
+      </div>
+    </header>
+    <main class="workspace">
+      <section class="scene-heading" aria-labelledby="scene-title">
+        <div>
+          <p class="eyebrow"><span></span><strong id="scene-context">WILLIAM SHAKESPEARE / 第二幕 · 第二场</strong></p>
+          <h1 id="scene-title">罗密欧与朱丽叶</h1>
+          <p class="scene-note" id="scene-note">月下花园 · 阳台场景</p>
+        </div>
+        <button class="outline load-demo" id="load-demo" type="button"></button>
+      </section>
+
+      <div class="work-grid">
+        <section class="performance-column" aria-label="舞台与场景时间线">
+          <div class="monitor" id="monitor">
+            <div class="monitor-bar">
+              <div class="monitor-title"><span class="iris-icon" aria-hidden="true"></span> 舞台监看</div>
+              <div class="monitor-state"><span id="stage-state">就绪</span><span class="monitor-divider"></span><span id="shot-label">全景</span></div>
+            </div>
+            <div class="viewport" id="viewport">
+              <div class="stage-image">
+                <canvas id="stage" aria-label="罗密欧与朱丽叶三维排练舞台"></canvas>
+                <div id="render-error" class="render-error" hidden>舞台需要支持 WebGL 2 的浏览器。请启用浏览器的图形加速后重新加载。</div>
+                <div class="view-fade"></div>
+              </div>
+              <div class="caption" id="caption" aria-label="当前字幕">
+                <span id="caption-speaker"></span>
+                <p id="caption-text"></p>
+              </div>
+            </div>
+            <div class="transport">
+              <div class="transport-controls">
+                <button type="button" id="previous" class="icon-button" aria-label="上一句" title="上一句"></button>
+                <button type="button" id="play" class="icon-button play" aria-label="播放" title="播放 / 暂停（空格）"></button>
+                <button type="button" id="next" class="icon-button" aria-label="下一句" title="下一句"></button>
+                <span id="timecode" class="timecode" aria-label="当前时间与总时长">00:00 <b>/</b> 00:00</span>
+                <button type="button" id="captions-toggle" class="icon-button" aria-label="字幕" aria-pressed="true" title="显示或隐藏字幕"></button>
+                <button type="button" id="voice" class="icon-button voice" aria-label="开启朗读" aria-pressed="false" title="开启朗读"></button>
+                <button type="button" id="fullscreen" class="icon-button" aria-label="全屏舞台" title="全屏舞台"></button>
+              </div>
+              <div class="track">
+                <div class="cues" id="cues" aria-hidden="true"></div>
+                <input type="range" id="timeline" min="0" max="1" step="0.001" value="0" aria-label="拖动场景时间线">
+                <div class="ruler" aria-hidden="true"><span>0:00</span><span class="step-hint">[ / ] 逐帧</span><span id="duration">0:00</span></div>
+              </div>
+            </div>
+          </div>
+          <section class="lines" aria-labelledby="lines-title">
+            <div class="lines-header">
+              <h2 id="lines-title">场景台词</h2>
+              <span id="beat-count"></span>
+            </div>
+            <ol id="line-list"></ol>
+          </section>
+        </section>
+
+        <aside class="inspector" aria-label="导演控制">
+          <div id="live-panel">
+            <header class="inspector-header"><div class="panel-icon" id="direction-icon" aria-hidden="true"></div><div><h2>现场导戏</h2></div></header>
+            <div class="control-content">
+              <fieldset class="actor-control">
+                <legend>演员</legend>
+                <div class="actor-options" id="actor-options"></div>
+              </fieldset>
+              <fieldset class="emotion-control">
+                <legend>表演情绪</legend>
+                <div class="emotion-options" id="emotions"></div>
+              </fieldset>
+              <label class="range-control" for="intensity"><span>情绪强度</span> <output id="strength">72%</output></label>
+              <input type="range" id="intensity" min="0" max="100" step="1" value="72">
+              <label class="field" for="gesture">动作
+                <select id="gesture"></select>
+              </label>
+              <form id="line-form">
+                <label class="field" for="line">即兴台词
+                  <textarea id="line" rows="3" required maxlength="480" placeholder="输入一句中文台词"></textarea>
+                </label>
+                <button type="submit" class="primary" id="perform"></button>
+              </form>
+              <p id="live-notice" class="notice" role="status" hidden></p>
+            </div>
+          </div>
+
+          <div id="script-panel" hidden>
+            <header class="inspector-header"><div class="panel-icon" id="script-icon" aria-hidden="true"></div><div><h2>剧本</h2></div></header>
+            <div class="control-content">
+              <form id="script-form">
+                <div class="field">
+                  <label for="script-example">剧本示例</label>
+                  <div class="script-picker">
+                    <select id="script-example"></select>
+                    <button class="outline" id="fill-script" type="button" title="用所选示例替换当前编辑内容">填入</button>
+                  </div>
+                </div>
+                <label class="field" for="script">编辑排练指令
+                  <textarea id="script" rows="15" required spellcheck="false"></textarea>
+                </label>
+                <p class="format-note"><code>角色 [情绪 强度 | 动作]: 台词</code><br>用 <code>+</code> 混合情绪，用逗号连接动作。</p>
+                <button type="submit" class="primary" id="run-script"></button>
+                <p id="script-notice" class="notice" role="status" hidden></p>
+              </form>
+            </div>
+          </div>
+
+          <div id="gallery-panel" hidden>
+            <header class="inspector-header"><div class="panel-icon" id="gallery-icon" aria-hidden="true"></div><div><h2>表情图谱</h2></div></header>
+            <div class="control-content">
+              <fieldset><legend>演员</legend><div id="gallery-actors" class="actor-options"></div></fieldset>
+              <fieldset><legend>面部表情</legend><div class="gallery-options" id="gallery-emotions"></div></fieldset>
+              <label class="range-control" for="gallery-intensity"><span>情绪强度</span> <output id="gallery-strength">100%</output></label>
+              <input type="range" id="gallery-intensity" min="0" max="100" step="1" value="100">
+            </div>
+          </div>
+
+          <section class="optics" aria-labelledby="optics-title">
+            <h2 id="optics-title">镜头与灯光</h2>
+            <div class="optics-grid">
+              <label class="field" for="camera">镜头 <select id="camera"></select></label>
+              <label class="field" for="lighting">灯光 <select id="lighting"></select></label>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>
